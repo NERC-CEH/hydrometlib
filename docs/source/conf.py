@@ -1,6 +1,6 @@
 # Configuration file for the Sphinx documentation builder.
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
-
+import os
 from importlib.metadata import version as get_version
 
 project = "Hydrometeorology Calculation Library"
@@ -22,11 +22,8 @@ extensions = [
     "sphinx_autodoc_typehints",
     "sphinx_contributors",
     "sphinx_iconify",
-    # Optional: uncomment as needed
-    # "sphinx_tabs.tabs",
-    # "sphinxcontrib.mermaid",
-    # "jupyter_sphinx",
-    # "matplotlib.sphinxext.plot_directive",
+    "sphinx_tabs.tabs",
+    "jupyter_sphinx",
 ]
 
 templates_path = ["_templates"]
@@ -49,8 +46,7 @@ html_context = {
 html_theme_options = {
     "accent_color": "blue",
     "nav_links": [
-        {"title": "Installation", "url": "installation"},
-        {"title": "API reference", "url": "api"},
+        {"title": "Getting started", "url": "getting_started/installation"},
     ],
     "github_url": "https://github.com/NERC-CEH/hydrometlib",
 }
@@ -60,3 +56,9 @@ napoleon_google_docstring = True
 napoleon_numpy_docstring = False
 napoleon_use_param = True
 napoleon_use_rtype = False
+
+# -- Jupyter-sphinx settings -------------------------------------------------------
+# Add examples path to Python's path
+examples_path = os.path.abspath("../../src/hydrometlib/examples")
+# Make sure jupyter-sphinx uses the same path
+os.environ["PYTHONPATH"] = examples_path + os.pathsep + os.environ.get("PYTHONPATH", "")

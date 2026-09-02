@@ -1,4 +1,3 @@
-
 .. _index:
 
 :layout: landing
@@ -9,7 +8,7 @@ Hydrometeorology Calculation Library
 
 .. rst-class:: lead
 
-    A trusted library of verified and referenced hydrometeoroloigical calculations and derivations.
+    A trusted library of verified and referenced hydrometeorological calculations and derivations.
 
 Current version: |release|
 
@@ -31,7 +30,6 @@ License
 
 This project is licensed under the `MIT <https://github.com/NERC-CEH/hydrometlib/blob/main/LICENSE>`_.
 
-
 .. toctree::
     :hidden:
     :maxdepth: 2
@@ -45,3 +43,10 @@ This project is licensed under the `MIT <https://github.com/NERC-CEH/hydrometlib
     :caption: API reference
 
     api
+
+.. toctree::
+    :hidden:
+    :maxdepth: 2
+    :caption: Developer guide
+
+    developer/contributing

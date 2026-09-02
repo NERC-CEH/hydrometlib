@@ -6,7 +6,13 @@ Installation
 
 .. rst-class:: lead
 
-   Install **Hydrometeorology Calculation Library** as a Python package and verify your setup.
+   Install the **Hydrometeorology Calculation Library** as a Python package and verify your setup.
+
+Requirements
+============
+
+- Python **3.12+**
+- Recommended package manager: **pip** or `uv <https://docs.astral.sh/uv/getting-started/installation/>`_
 
 Install options
 ===============
@@ -21,13 +27,13 @@ Install options
 
         .. code-block:: bash
 
-            uv add hydrometlib
+            uv add git+https://github.com/NERC-CEH/hydrometlib
 
     .. tab-item:: :iconify:`devicon:pypi` pip
 
         .. code-block:: bash
 
-            pip install hydrometlib
+            pip install git+https://github.com/NERC-CEH/hydrometlib
 
 Importing
 =========

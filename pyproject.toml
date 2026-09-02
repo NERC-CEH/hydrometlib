@@ -1,4 +1,3 @@
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -6,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "hydrometlib"
 version = "0.1.0"
-description = "A trusted library of verified and referenced hydrometeoroloigical calculations and derivations."
+description = "A trusted library of verified and referenced hydrometeorological calculations and derivations."
 readme = "README.md"
 authors = [
   {name = "Richard Smith", email = "ricsmi@ceh.ac.uk"}
@@ -19,17 +18,26 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 license = { file = "LICENSE" }
-dependencies = []
+dependencies = [
+    "polars>=1.42.1",
+]
 requires-python = ">= 3.12"
+
+[project.optional-dependencies]
+pandas = [
+    "pandas>=2.2",
+    "pyarrow>=17",
+]
+numpy = [
+    "numpy>=1.26",
+]
 
 [dependency-groups]
 dev = [
     { include-group = "lint" },
     { include-group = "test" },
     { include-group = "typecheck" },
-
     { include-group = "docs" },
-
 ]
 lint = [
     "ruff",
@@ -38,9 +46,13 @@ test = [
     "coverage",
     "pytest",
     "pytest-cov",
+    "pandas>=2.2",
+    "pyarrow>=17",
+    "numpy>=1.26",
 ]
 typecheck = [
     "pyright",
+    "pandas-stubs",
 ]
 docs = [
     "sphinx",
@@ -66,6 +78,7 @@ homepage = "https://github.com/NERC-CEH/hydrometlib"
 venvPath = "."
 venv = ".venv"
 include = ["src", "tests"]
+reportUnnecessaryComparison = "error"
 
 [tool.ruff]
 line-length = 120
