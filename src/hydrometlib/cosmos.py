@@ -5,7 +5,13 @@ from hydrometlib._dispatch import flexible
 
 @flexible
 def neutron_intensity_factor(crns_count: pl.Expr, ref_c0: float, gamma: float) -> pl.Expr:
-    """Calculate incoming neutron count intensity correction factor using a background reference station [unitless]
+    r"""Calculate incoming neutron count intensity correction factor using a background reference station [unitless]
+
+    .. math::
+
+        f_{inten} = \frac{1}{\gamma \left( \dfrac{C}{C_0} - 1 \right) + 1}
+
+    where :math:`C` is ``crns_count`` and :math:`C_0` is ``ref_c0``.
 
     References:
         - "COSMOS: the Cosmic-ray Soil Moisture Observing System" https://hess.copernicus.org/articles/16/4079/2012/
@@ -28,7 +34,14 @@ def neutron_intensity_factor(crns_count: pl.Expr, ref_c0: float, gamma: float) -
 
 @flexible
 def absolute_humidity_factor(q: pl.Expr, ref_q0: float) -> pl.Expr:
-    """Calculate absolute humidity correction factor to neutron counts [unitless]
+    r"""Calculate absolute humidity correction factor to neutron counts [unitless]
+
+    .. math::
+
+        f_Q = 1 + 0.0054 \, (Q - Q_0)
+
+    where :math:`Q` is the absolute humidity and :math:`Q_0` (``ref_q0``) the reference condition;
+    0.0054 is the empirical structure constant.
 
     References:
         - Rosolem, R., W. J. Shuttleworth, M. Zreda, T. E. Franz, X. Zeng, and S. A. Kurc, 2013:
@@ -54,7 +67,13 @@ def absolute_humidity_factor(q: pl.Expr, ref_q0: float) -> pl.Expr:
 
 @flexible
 def atmospheric_pressure_factor(pa: pl.Expr, barometric_attenuation_length: float) -> pl.Expr:
-    """Calculate atmospheric pressure correction factor to neutron counts [unitless]
+    r"""Calculate atmospheric pressure correction factor to neutron counts [unitless]
+
+    .. math::
+
+        f_p = \exp\!\left( \frac{p_a - 1000}{L} \right)
+
+    where :math:`L` is the barometric attenuation length and 1000 hPa the reference pressure.
 
     References:
         - CRNPy correction factor, Desilets & Zreda, 2003: https://doi.org/10.1016/S0012-821X(02)01088-9
@@ -75,7 +94,11 @@ def atmospheric_pressure_factor(pa: pl.Expr, barometric_attenuation_length: floa
 
 @flexible
 def correct_counts(cts_mod: pl.Expr, factor_inten: pl.Expr, factor_pa: pl.Expr, factor_q: pl.Expr) -> pl.Expr:
-    """Calculate corrected neutron counts using correction factors [counts h-1]
+    r"""Calculate corrected neutron counts using correction factors [counts h-1]
+
+    .. math::
+
+        C_{corr} = C \cdot f_{inten} \cdot f_p \cdot f_Q
 
     Bogena et al. (2022): https://doi.org/10.5194/essd-14-1125-2022:
     "Variations of the incoming cosmic-ray intensity can have many causes, from galactic and solar disturbances to
@@ -104,10 +127,20 @@ def volumetric_water_content(
     n_min: float,
     n_max: float,
 ) -> pl.Expr:
-    """Calculate volumetric water content (VWC) from corrected neutron counts and site annotations [%]
+    r"""Calculate volumetric water content (VWC) from corrected neutron counts and site annotations [%]
 
     VWC is the total volume of water present in a given volume of soil, represented as a fraction of the
     soil volume occupied by water (the remainder of the fraction being solid particles and air pockets).
+
+    .. math::
+
+        \theta_v = 100 \, \rho_b \left(
+            \frac{0.0808}{\dfrac{C_{corr}}{N_0} - 0.372} - 0.115 - \theta_{lw} - \theta_{soc}
+        \right)
+
+    where :math:`\rho_b` is ``ref_bulkdensity``, :math:`\theta_{lw}` is ``ref_latticewater`` and
+    :math:`\theta_{soc}` is ``ref_soc``. :math:`C_{corr}` is first clipped to
+    ``[n_min, n_max]`` and the result is clipped to ``[0, 100]``.
 
     References:
         - "COSMOS: the COsmic-ray Soil Moisture Observing System", Zreda et al., 2012
@@ -141,11 +174,23 @@ def volumetric_water_content(
 
 @flexible
 def snow_estimated_counts(cts_smo: pl.Expr, snow: pl.Expr, time: pl.Expr) -> pl.Expr:
-    """Calculate CRNS count estimates when there is snow [counts h-1]
+    r"""Calculate CRNS count estimates when there is snow [counts h-1]
 
     This derivation reconstructs CRNS counts as if there had been no snow, because snow suppresses the counts.
     During a snow event, the estimated count is set to the value of the counts just before the snow started.
     If the counts increase, so should the estimate.
+
+    .. math::
+
+        \hat{C}_t =
+        \begin{cases}
+        C_t & \text{if } C_t > \hat{C}^{\,init} \\
+        \hat{C}^{\,init} & \text{otherwise}
+        \end{cases}
+
+    where :math:`\hat{C}^{\,init}` is the smoothed count at the start of the current snow period,
+    carried forward. :math:`\hat{C}_t` is null outside snow periods. Snow periods are identified from
+    ``snow`` using 24- and 48-hour offsets (see the source for the event-detection logic).
 
     Reference: Wallbank JR, Cole SJ, Moore RJ, Anderson SR, Mellor EJ.
             Estimating snow water equivalent using cosmic-ray neutron sensors from the COSMOS-UK network.
@@ -187,7 +232,14 @@ def snow_estimated_counts(cts_smo: pl.Expr, snow: pl.Expr, time: pl.Expr) -> pl.
 
 @flexible
 def snow_water_equivalence(cts_smo: pl.Expr, cts_est: pl.Expr, n0_mod: float) -> pl.Expr:
-    """Calculate snow water equivalence (SWE) for an above ground COSMOS sensor [mm water equivalent]
+    r"""Calculate snow water equivalence (SWE) for an above ground COSMOS sensor [mm water equivalent]
+
+    .. math::
+
+        SWE = -\Lambda \, \ln\!\left( \frac{C_{smo} - N_{wat}}{C_{est} - N_{wat}} \right),
+        \qquad \Lambda = 48, \quad N_{wat} = 0.38 \, N_0
+
+    where :math:`N_0` is ``n0_mod``.
 
     References:
         - Wallbank J. R., Cole S. J., Moore R. J., Anderson S. R., Mellor E. J. (2020),
@@ -215,7 +267,21 @@ def snow_water_equivalence(cts_smo: pl.Expr, cts_est: pl.Expr, n0_mod: float) ->
 
 @flexible
 def snow_water_equivalence_snowfox(cts_smo: pl.Expr, cts_est: pl.Expr) -> pl.Expr:
-    """Calculate snow water equivalence (SWE) for a below ground (SnowFox) COSMOS sensor [mm water equivalent]
+    r"""Calculate snow water equivalence (SWE) for a below ground (SnowFox) COSMOS sensor [mm water equivalent]
+
+    .. math::
+
+        \begin{aligned}
+        N^{*} &= \frac{C_{smo}}{C_{est}} \\[4pt]
+        \Lambda &= \frac{1}{\Lambda_{max}}
+            - \left( \frac{1}{\Lambda_{max}} - \frac{1}{\Lambda_{min}} \right)
+            \left( 1 + e^{(a_1 - N^{*}) / a_2} \right)^{-a_3} \\[4pt]
+        SWE &= -\,\frac{10 \, \ln N^{*}}{\Lambda}
+        \end{aligned}
+
+    with :math:`a_1 = 0.3133`, :math:`a_2 = 0.08268`, :math:`a_3 = 1.117`,
+    :math:`\Lambda_{max} = 114.4` and :math:`\Lambda_{min} = 14.11` (Howat et al. 2018). The factor
+    of 10 converts cm to mm.
 
     References:
         - Wallbank J. R., Cole S. J., Moore R. J., Anderson S. R., Mellor E. J. (2020),
@@ -252,8 +318,18 @@ def snow_water_equivalence_snowfox(cts_smo: pl.Expr, cts_est: pl.Expr) -> pl.Exp
 
 @flexible
 def sigma_snow_water_equivalence(cts_smo: pl.Expr, cts_est: pl.Expr, n0_mod: float) -> pl.Expr:
-    """Calculate **uncertainty** in a snow water equivalence (SWE) calculation for the
+    r"""Calculate **uncertainty** in a snow water equivalence (SWE) calculation for the
     above ground COSMOS sensor [mm water equivalent]
+
+    .. math::
+
+        \sigma_{SWE} = \sqrt{
+            \left( \frac{-\Lambda}{C_{smo} - N_{wat}} \right)^2 \frac{C_{smo}}{24}
+            + \left( \frac{\Lambda}{C_{est} - N_{wat}} \right)^2 \sigma_{N_0}^2
+        }
+
+    with :math:`\Lambda = 48`, :math:`N_{wat} = 0.38 \, N_0` and :math:`\sigma_{N_0} = 12`. The two
+    terms are the propagated Poisson counting error and the calibration error.
 
     References:
         - Wallbank J. R., Cole S. J., Moore R. J., Anderson S. R., Mellor E. J. (2020),
@@ -291,8 +367,18 @@ def sigma_snow_water_equivalence(cts_smo: pl.Expr, cts_est: pl.Expr, n0_mod: flo
 
 @flexible
 def sigma_snow_water_equivalence_snowfox(cts_smo: pl.Expr, cts_est: pl.Expr) -> pl.Expr:
-    """Calculate **uncertainty** in a snow water equivalence (SWE) calculation for a below ground (SnowFox) COSMOS
+    r"""Calculate **uncertainty** in a snow water equivalence (SWE) calculation for a below ground (SnowFox) COSMOS
     sensor [mm water equivalent]
+
+    .. math::
+
+        \sigma_{SWE} = \sqrt{
+            \left( \frac{c}{C_{est}} \right)^2 \frac{C_{smo}}{24}
+            + \left( \frac{-c \, C_{smo}}{C_{est}^2} \right)^2 \sigma_{N_0}^2
+        }
+
+    with :math:`c = -157` (estimated from the 0-30 mm portion of the Howat et al. 2018 attenuation
+    curve) and :math:`\sigma_{N_0} = 16`.
 
     References:
         - Wallbank J. R., Cole S. J., Moore R. J., Anderson S. R., Mellor E. J. (2020),
@@ -332,7 +418,7 @@ def sigma_snow_water_equivalence_snowfox(cts_smo: pl.Expr, cts_est: pl.Expr) -> 
 def soil_moisture_index(
     cosmos_vwc: pl.Expr, wilting_point: pl.Expr, field_capacity: pl.Expr, saturation: pl.Expr
 ) -> pl.Expr:
-    """Calculate soil moisture index (SMI) [unitless, 0-2]
+    r"""Calculate soil moisture index (SMI) [unitless, 0-2]
 
     SMI is a normalised measure of soil wetness relative to the wilting point, field capacity and
     saturation of the soil:
@@ -341,6 +427,19 @@ def soil_moisture_index(
     - between 0 and 1, when VWC is between the wilting point and field capacity
     - between 1 and 2, when VWC is between field capacity and saturation
     - 2, when VWC is at or above saturation
+
+    .. math::
+
+        SMI =
+        \begin{cases}
+        0 & \theta_v \le \theta_{wp} \\[2pt]
+        \dfrac{\theta_v - \theta_{wp}}{\theta_{fc} - \theta_{wp}} & \theta_{wp} < \theta_v \le \theta_{fc} \\[6pt]
+        1 + \dfrac{\theta_v - \theta_{fc}}{\theta_{sat} - \theta_{fc}} & \theta_{fc} < \theta_v \le \theta_{sat} \\[6pt]
+        2 & \theta_v > \theta_{sat}
+        \end{cases}
+
+    where :math:`\theta_{wp}` is ``wilting_point``, :math:`\theta_{fc}` is ``field_capacity`` and
+    :math:`\theta_{sat}` is ``saturation``. A null :math:`\theta_v` gives a null result.
 
     Reference:
         COSMOS-UK User Guide; Appendix H Soil Moisture Index
@@ -370,7 +469,14 @@ def soil_moisture_index(
 
 @flexible
 def effective_depth(cosmos_vwc: pl.Expr, ref_soc: float, ref_bulkdensity: float, ref_latticewater: float) -> pl.Expr:
-    """Original effective depth calculation from SIMPLE VWC method [cm]
+    r"""Original effective depth calculation from SIMPLE VWC method [cm]
+
+    .. math::
+
+        d = \frac{5.8}{\rho_b \, (\theta_{lw} + \theta_{soc}) + \dfrac{\theta_v}{100} + 0.0829}
+
+    where :math:`\rho_b` is ``ref_bulkdensity``, :math:`\theta_{lw}` is ``ref_latticewater``,
+    :math:`\theta_{soc}` is ``ref_soc`` and :math:`\theta_v` is the VWC in percent.
 
     References:
         - Franz TE, Zreda M, Rosolem R, Ferre TPA. (2013) A universal calibration function for
@@ -401,10 +507,24 @@ def d86(
     ref_latticewater: float,
     distance: float,
 ) -> pl.Expr:
-    """Calculate D86 value [cm]
+    r"""Calculate D86 value [cm]
 
     D86 is defined as the depth to which 86% of the detected cosmic ray neutrons had contact with constituents
     of the soil. It can be calculated at given distances from the Cosmic Ray Neutron Sensor (CRNS).
+
+    .. math::
+
+        \begin{aligned}
+        \theta_{twe} &= \frac{\theta_v}{100} + \rho_b \, (\theta_{lw} + \theta_{soc}) \\[4pt]
+        F_p &= \frac{0.4922}{0.86 - e^{-p_a / 1013}} \\[4pt]
+        r^{*} &= \frac{r}{F_p} \\[4pt]
+        D_{86} &= \frac{1}{\rho_b} \left[ 8.321 + 0.14249 \left( 0.96655 + e^{-0.01 \, r^{*}} \right)
+            \frac{20 + \theta_{twe}}{0.0429 + \theta_{twe}} \right]
+        \end{aligned}
+
+    where :math:`\theta_{twe}` is the total water-equivalent content, :math:`r` is ``distance``,
+    :math:`\rho_b` is ``ref_bulkdensity``, :math:`\theta_{lw}` is ``ref_latticewater`` and
+    :math:`\theta_{soc}` is ``ref_soc``. The vegetation factor is fixed at 1.
 
     Reference:
         Schrön, M., Köhli, M., Scheiffele, L., Iwema, J., Bogena, H. R., Lv, L., Martini, E., Baroni, G.,
@@ -453,7 +573,11 @@ def d86(
 
 
 def _parameter_function_fp(pa: pl.Expr) -> pl.Expr:
-    """Parameter function 'Fp' for use in the D86 calculation [unitless]
+    r"""Parameter function 'Fp' for use in the D86 calculation [unitless]
+
+    .. math::
+
+        F_p = \frac{0.4922}{0.86 - e^{-p_a / 1013}}
 
     Steps taken from Schrön et al. (2017); Appendix A: The revised weighting functions
 

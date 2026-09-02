@@ -5,12 +5,16 @@ from hydrometlib._dispatch import flexible
 
 @flexible
 def net_radiation(swin: pl.Expr, swout: pl.Expr, lwin: pl.Expr, lwout: pl.Expr) -> pl.Expr:
-    """Calculate net radiation (rn) [W m-2]
+    r"""Calculate net radiation (rn) [W m-2]
 
     The difference between the downward and upward total radiation.
 
+    .. math::
+
+        R_n = (SW_{in} - SW_{out}) + (LW_{in} - LW_{out})
+
     Reference:
-        FAO-56 method (eq40) https://www.fao.org/4/x0490e/x0490e07.htm#net%20radiation%20(rn)
+        FAO-56 Chapter 3 (eq. 40) https://www.fao.org/4/x0490e/x0490e07.htm#net%20radiation%20(rn)
 
     Args:
         swin: Incoming shortwave radiation [W m-2]
@@ -26,10 +30,14 @@ def net_radiation(swin: pl.Expr, swout: pl.Expr, lwin: pl.Expr, lwout: pl.Expr) 
 
 @flexible
 def mean_soil_heat_flux(g1: pl.Expr, g2: pl.Expr) -> pl.Expr:
-    """Calculate the mean soil heat flux (g) from two soil heat flux measurements [W m-2]
+    r"""Calculate the mean soil heat flux (g) from two soil heat flux measurements [W m-2]
 
     Soil heat flux defines the amount of thermal energy transferred through the soil, in a vertical
     direction, per unit of time.
+
+    .. math::
+
+        G = \frac{G_1 + G_2}{2}
 
     Args:
         g1: Soil heat flux measurement 1 [W m-2]
@@ -43,15 +51,22 @@ def mean_soil_heat_flux(g1: pl.Expr, g2: pl.Expr) -> pl.Expr:
 
 @flexible
 def mean_sea_level_pressure(pa: pl.Expr, ta: pl.Expr, altitude: float) -> pl.Expr:
-    """Calculate mean sea level pressure (mslp) [hPa]
+    r"""Calculate mean sea level pressure (mslp) [hPa]
 
     Adjusts measured atmospheric pressure to its sea-level equivalent. Measured pressure depends on the
     altitude of the sensor. This converts it to the pressure that would be observed at sea level, using
     the site altitude and air temperature to account for the decrease in pressure with height according
     to the standard atmosphere model.
 
-    See US Standard Atmosphere, eq. 33a: https://ntrs.nasa.gov/api/citations/19770009539/downloads/19770009539.pdf
-    See also: https://www.fao.org/4/x0490e/x0490e07.htm
+    .. math::
+
+        p_{msl} = p_a \left( 1 - \frac{0.0065 \, z}{T_a + 0.0065 \, z + 273.15} \right)^{-5.257}
+
+    where :math:`z` is the site altitude [m] and :math:`T_a` the air temperature [Celsius].
+
+    References:
+        - US Standard Atmosphere, (eq. 33a): https://ntrs.nasa.gov/api/citations/19770009539/downloads/19770009539.pdf
+        - FAO-56 Chapter 3 (eq. 7) https://www.fao.org/4/x0490e/x0490e07.htm
 
     Args:
         pa: Atmospheric pressure [hPa]
@@ -66,9 +81,17 @@ def mean_sea_level_pressure(pa: pl.Expr, ta: pl.Expr, altitude: float) -> pl.Exp
 
 @flexible
 def absolute_humidity(ta: pl.Expr, rh: pl.Expr) -> pl.Expr:
-    """Calculate absolute humidity Q [g m-3]
+    r"""Calculate absolute humidity Q [g m-3]
 
     A measure of the actual amount of water vapor in the air.
+
+    .. math::
+
+        Q = \frac{6.112 \, \exp\!\left( \dfrac{17.67 \, T_a}{T_a + 243.5} \right) \times 2.1674 \times RH}
+                 {T_a + 273.15}
+
+    with :math:`T_a` in Celsius and :math:`RH` as a percentage. The derivation of the constants is
+    set out step by step below.
 
     References:
         - Saturation vapour pressure (step 1): Bolton, D. (1980). The computation of equivalent potential
@@ -126,16 +149,30 @@ def absolute_humidity(ta: pl.Expr, rh: pl.Expr) -> pl.Expr:
 
 @flexible
 def solar_zenith(time: pl.Expr, latitude: float) -> pl.Expr:
-    """Calculate angle of the sun from the vertical [radians]
+    r"""Calculate the solar zenith angle (theta_s) [radians]
 
-    Taken from https://en.wikipedia.org/wiki/Solar_zenith_angle, with some approximations.
+    The angle of the sun from the vertical: 0 when the sun is directly overhead, ``pi / 2`` at the
+    horizon and ``pi`` at the nadir. ``cos(theta_s) > 0`` means the sun is above the horizon, which
+    is used as a proxy for daylight hours.
 
-    theta_s is solar zenith in radians:
-        0 = overhead
-        pi/2 = horizon
-        pi = nadir
+    This is an approximate calculation: the hour angle is taken straight from the clock time and the
+    declination from a simple day-of-year formula, so longitude and the equation of time are not
+    accounted for.
 
-    cos(theta_s) > 0 means sun above horizon, proxy for daylight hours.
+    .. math::
+
+        \begin{aligned}
+        H &= \left( t_\mathrm{hour} + \frac{t_\mathrm{min}}{60} - 12 \right) \cdot \frac{15\pi}{180} \\[4pt]
+        \delta &= -\,\frac{23.44\pi}{180} \, \cos\!\left( \frac{360}{365}\,(n + 10) \cdot \frac{\pi}{180} \right)
+            \\[4pt]
+        \theta_s &= \arccos\!\left( \sin\phi \, \sin\delta + \cos\phi \, \cos\delta \, \cos H \right)
+        \end{aligned}
+
+    where :math:`H` is the hour angle, :math:`\delta` the solar declination, :math:`n` the ordinal
+    day of the year and :math:`\phi` the latitude in radians.
+
+    References:
+        - Taken from https://en.wikipedia.org/wiki/Solar_zenith_angle, with some approximations.
 
     Args:
         time: Datetime column of the observations [local clock time]. The hour angle is taken
@@ -169,16 +206,23 @@ def solar_zenith(time: pl.Expr, latitude: float) -> pl.Expr:
 
 @flexible
 def albedo(swin: pl.Expr, swout: pl.Expr, solar_zenith_angle: pl.Expr) -> pl.Expr:
-    """Calculate albedo [unitless fraction]
+    r"""Calculate albedo [unitless fraction]
 
     The ratio of reflected solar radiation to the total incoming solar radiation.
 
+    .. math::
+
+        \alpha = \operatorname{clip}\!\left( \frac{SW_{out}}{SW_{in}},\; 0,\; 1 \right)
+        \qquad \text{for } SW_{in} > 0 \text{ and } \cos\theta_s > 0
+
+    where :math:`\theta_s` is the solar zenith angle; :math:`\alpha` is null outside these conditions
+    (for example at night).
+
     References:
-        - https://www.fao.org/4/x0490e/x0490e07.htm
+        - FAO-56 Chapter 3 https://www.fao.org/4/x0490e/x0490e07.htm
         - https://onlinelibrary.wiley.com/doi/epdf/10.1002/hyp.14048
 
-    This calculation does not account for correction due to site being on a slope. That is handled
-    separately by a correction method.
+    This calculation does not account for correction due to site being on a slope.
 
     Args:
         swin: Shortwave incoming radiation [W m-2]
@@ -199,7 +243,20 @@ def albedo(swin: pl.Expr, swout: pl.Expr, solar_zenith_angle: pl.Expr) -> pl.Exp
 
 @flexible
 def is_snow_day(albedo_expr: pl.Expr, albedo_min_threshold: float, albedo_max_threshold: float) -> pl.Expr:
-    """Calculate if a given day is a snow day. True is snow, False if not.
+    r"""Calculate if a given day is a snow day. True is snow, False if not.
+
+    .. math::
+
+        \text{snow}_t =
+        \begin{cases}
+        \alpha_t \ge \tau_{max} & \text{if } \alpha_{t-1} \text{ is null} \\
+        \alpha_t \ge \tau_{min} & \text{if } \alpha_{t-1} \ge \tau_{max} \\
+        \alpha_t \ge \tau_{max} & \text{otherwise}
+        \end{cases}
+
+    where :math:`\alpha_t` is today's albedo, :math:`\alpha_{t-1}` yesterday's, :math:`\tau_{min}` the
+    lower threshold and :math:`\tau_{max}` the upper. Below the corresponding threshold the result is
+    ``False``; if it falls between the two it is null.
 
     Simple rules:
         - If today's albedo is None, then is_snow_day is None

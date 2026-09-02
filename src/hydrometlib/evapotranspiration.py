@@ -5,9 +5,14 @@ from hydrometlib._dispatch import flexible
 
 @flexible
 def saturation_vapour_pressure(ta: pl.Expr) -> pl.Expr:
-    """Saturation vapour pressure (es) [kPa]
+    r"""Saturation vapour pressure (es) [kPa]
 
-    Steps taken from FAO-56 method (eq11) https://www.fao.org/4/x0490e/x0490e07.htm#calculation%20procedures
+    .. math::
+
+        e_s = 0.6108 \, \exp\!\left( \frac{17.27 \, T_a}{T_a + 237.3} \right)
+
+    References:
+        - FAO-56 Chapter 3 (eq. 11) https://www.fao.org/4/x0490e/x0490e07.htm#calculation%20procedures
 
     Args:
         ta: Air temperature [degC]
@@ -20,9 +25,14 @@ def saturation_vapour_pressure(ta: pl.Expr) -> pl.Expr:
 
 @flexible
 def actual_vapour_pressure(es: pl.Expr, rh: pl.Expr) -> pl.Expr:
-    """Actual vapour pressure (ea) [kPa]
+    r"""Actual vapour pressure (ea) [kPa]
 
-    Steps taken from FAO-56 1-hour method (eq54) https://www.fao.org/4/x0490e/x0490e08.htm
+    .. math::
+
+        e_a = e_s \cdot \frac{RH}{100}
+
+    References:
+        - FAO-56 Chapter 4 (eq. 54) https://www.fao.org/4/x0490e/x0490e08.htm
 
     Args:
         es: Saturation vapour pressure [kPa]
@@ -36,9 +46,14 @@ def actual_vapour_pressure(es: pl.Expr, rh: pl.Expr) -> pl.Expr:
 
 @flexible
 def vapour_pressure_curve_slope(es: pl.Expr, ta: pl.Expr) -> pl.Expr:
-    """Slope of vapour pressure curve (delta) [kPa degC-1]
+    r"""Slope of vapour pressure curve (delta) [kPa degC-1]
 
-    Steps taken from FAO-56 method (eq13) https://www.fao.org/4/x0490e/x0490e07.htm#calculation%20procedures
+    .. math::
+
+        \Delta = \frac{4098 \, e_s}{(T_a + 237.3)^2}
+
+    References:
+        - FAO-56 Chapter 3 (eq. 13) https://www.fao.org/4/x0490e/x0490e07.htm#calculation%20procedures
 
     Args:
         es: Saturation vapour pressure [kPa]
@@ -52,12 +67,17 @@ def vapour_pressure_curve_slope(es: pl.Expr, ta: pl.Expr) -> pl.Expr:
 
 @flexible
 def latent_heat_of_vaporization(ta: pl.Expr) -> pl.Expr:
-    """Latent heat of vaporization (lambda) [MJ kg-1]
+    r"""Latent heat of vaporization (lambda) [MJ kg-1]
 
-    Steps taken from Harrison (1963), referenced by FAO Annex 3 https://www.fao.org/4/x0490e/x0490e0k.htm
+    .. math::
 
-    Harrison, L.P. 1963. "Fundamental concepts and definitions relating to humidity."
-        In: Wexler, A. & Wildhack, W.A. (eds.) Humidity and Moisture. Vol. 3. Reinhold Publishing Company, New York
+        \lambda = 2.501 - 2.361 \times 10^{-3} \, T_a
+
+    References:
+        - Harrison, L.P. 1963. "Fundamental concepts and definitions relating to humidity."
+          In: Wexler, A. & Wildhack, W.A. (eds.) Humidity and Moisture. Vol. 3.
+          Reinhold Publishing Company, New York
+        - FAO-56 Annex 3 https://www.fao.org/4/x0490e/x0490e0k.htm
 
     Args:
         ta: Air temperature [degC]
@@ -70,9 +90,17 @@ def latent_heat_of_vaporization(ta: pl.Expr) -> pl.Expr:
 
 @flexible
 def psychrometric_constant(pa: pl.Expr, lv: pl.Expr) -> pl.Expr:
-    """Psychrometric constant (gamma) [kPa degC-1]
+    r"""Psychrometric constant (gamma) [kPa degC-1]
 
-    Steps taken from FAO-56 method (eq8) https://www.fao.org/4/x0490e/x0490e07.htm#psychrometric%20constant%20(g)
+    .. math::
+
+        \gamma = \frac{1.013 \times 10^{-3} \cdot (p_a / 10)}{0.622 \, \lambda}
+
+    where :math:`p_a` is in hPa (divided by 10 to give kPa) and :math:`\lambda` is the latent heat
+    of vaporization.
+
+    References:
+        - FAO-56 Chapter 3 (eq. 8) https://www.fao.org/4/x0490e/x0490e07.htm#psychrometric%20constant%20(g)
 
     Args:
         pa: Atmospheric pressure [hPa]
@@ -88,9 +116,16 @@ def psychrometric_constant(pa: pl.Expr, lv: pl.Expr) -> pl.Expr:
 
 @flexible
 def wind_speed_height_correction(ws: pl.Expr, measured_height: pl.Expr) -> pl.Expr:
-    """Convert wind speed to 2m height [m s-1]
+    r"""Convert wind speed to 2m height [m s-1]
 
-    Steps taken from FAO-56 method (eq47) https://www.fao.org/4/x0490e/x0490e07.htm#wind%20profile%20relationship
+    .. math::
+
+        u_2 = u_z \cdot \frac{4.87}{\ln(67.8 \, z - 5.42)}
+
+    where :math:`u_z` is the wind speed measured at height :math:`z` [m].
+
+    References:
+        - FAO-56 Chapter 3 (eq. 47) https://www.fao.org/4/x0490e/x0490e07.htm#wind%20profile%20relationship
 
     Args:
         ws: Wind speed measured at ``measured_height`` [m s-1]
@@ -106,18 +141,31 @@ def wind_speed_height_correction(ws: pl.Expr, measured_height: pl.Expr) -> pl.Ex
 def potential_evapotranspiration_30min(
     rn: pl.Expr, g: pl.Expr, ta: pl.Expr, rh: pl.Expr, ws: pl.Expr, pa: pl.Expr, wind_height: pl.Expr
 ) -> pl.Expr:
-    """Calculate potential evapotranspiration (pet) [mm 30min-1]
+    r"""Calculate potential evapotranspiration (pet) [mm 30min-1]
 
     PET is the maximum amount of water that could be evapotranspirated in a given climate, given a theoretical
     continuous expanse of vegetation covering the whole ground and a continuous supply of water.
 
-    Steps taken from Penman-Monteith Evapotranspiration (FAO-56 Method): https://www.fao.org/4/x0490e/x0490e06.htm
+    .. math::
 
-    For hourly examples see eq53: https://www.fao.org/4/x0490e/x0490e08.htm
-    "With the advent of electronic, automated weather stations, weather data are increasingly reported for
-    hourly or shorter periods ... When applying the FAO Penman-Monteith equation on an hourly or shorter
-    timescale, the equation and some of the procedures for calculating meteorological data should be
-    adjusted for the smaller time step"
+        PET = \frac{0.408 \, \Delta \, (R_n - G)
+                    + \gamma \, \dfrac{19}{T_a + 273} \, u_2 \, (e_s - e_a)}
+                   {\Delta + \gamma \, (1 + 0.34 \, u_2)}
+
+    where :math:`R_n` and :math:`G` are converted from W m-2 to MJ m-2 (30 min)-1 by multiplying by
+    0.0018, :math:`u_2` is the wind speed corrected to 2 m, and :math:`e_s - e_a` is the vapour
+    pressure deficit. The numerator constant 19 is the FAO-56 daily value (900) scaled to a 30-minute
+    step (900 / 48).
+
+    Applied here on a 30-minute step. FAO-56 on shorter timescales: "With the advent of electronic,
+    automated weather stations, weather data are increasingly reported for hourly or shorter periods
+    ... When applying the FAO Penman-Monteith equation on an hourly or shorter timescale, the equation
+    and some of the procedures for calculating meteorological data should be adjusted for the smaller
+    time step".
+
+    References:
+        - FAO-56 Chapter 2, FAO Penman-Monteith equation https://www.fao.org/4/x0490e/x0490e06.htm
+        - FAO-56 Chapter 4 (eq. 53), hourly time step https://www.fao.org/4/x0490e/x0490e08.htm
 
     Args:
         rn: Net radiation [W m-2] (converted to MJ m-2 30min-1 internally)
