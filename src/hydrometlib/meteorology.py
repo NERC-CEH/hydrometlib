@@ -26,7 +26,7 @@ def net_radiation(swin: pl.Expr, swout: pl.Expr, lwin: pl.Expr, lwout: pl.Expr) 
 
 @flexible
 def mean_soil_heat_flux(g1: pl.Expr, g2: pl.Expr) -> pl.Expr:
-    """Calculate the mean soil heat flux (g) [W m-2] from two soil heat flux measurements.
+    """Calculate the mean soil heat flux (g) from two soil heat flux measurements [W m-2]
 
     Soil heat flux defines the amount of thermal energy transferred through the soil, in a vertical
     direction, per unit of time.
@@ -66,7 +66,7 @@ def mean_sea_level_pressure(pa: pl.Expr, ta: pl.Expr, altitude: float) -> pl.Exp
 
 @flexible
 def absolute_humidity(ta: pl.Expr, rh: pl.Expr) -> pl.Expr:
-    """Calculate absolute humidity Q [g m-3] (grams per cubic meter)
+    """Calculate absolute humidity Q [g m-3]
 
     A measure of the actual amount of water vapor in the air.
 

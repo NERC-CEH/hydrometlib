@@ -115,9 +115,9 @@ def potential_evapotranspiration_30min(
 
     For hourly examples see eq53: https://www.fao.org/4/x0490e/x0490e08.htm
     "With the advent of electronic, automated weather stations, weather data are increasingly reported for
-        hourly or shorter periods ... When applying the FAO Penman-Monteith equation on an hourly or shorter
-        timescale, the equation and some of the procedures for calculating meteorological data should be
-        adjusted for the smaller time step"
+    hourly or shorter periods ... When applying the FAO Penman-Monteith equation on an hourly or shorter
+    timescale, the equation and some of the procedures for calculating meteorological data should be
+    adjusted for the smaller time step"
 
     Args:
         rn: Net radiation [W m-2] (converted to MJ m-2 30min-1 internally)

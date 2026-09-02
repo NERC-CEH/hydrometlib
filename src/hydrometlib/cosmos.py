@@ -5,7 +5,7 @@ from hydrometlib._dispatch import flexible
 
 @flexible
 def neutron_intensity_factor(crns_count: pl.Expr, ref_c0: float, gamma: float) -> pl.Expr:
-    """Calculate incoming neutron count intensity correction factor using a background reference station.
+    """Calculate incoming neutron count intensity correction factor using a background reference station [unitless]
 
     References:
         - "COSMOS: the Cosmic-ray Soil Moisture Observing System" https://hess.copernicus.org/articles/16/4079/2012/
@@ -21,23 +21,23 @@ def neutron_intensity_factor(crns_count: pl.Expr, ref_c0: float, gamma: float) -
         gamma: Site attribute - scaling factor to adjust for geomagnetic effects [unitless]
 
     Returns:
-        Expression or Series for incoming neutron count intensity factor, [units = None]. Values should be positive.
+        Expression or Series for incoming neutron count intensity factor [unitless]
     """
     return 1 / (((crns_count / ref_c0) - 1) * gamma + 1)
 
 
 @flexible
 def absolute_humidity_factor(q: pl.Expr, ref_q0: float) -> pl.Expr:
-    """Calculate absolute humidity correction factor to neutron counts.
+    """Calculate absolute humidity correction factor to neutron counts [unitless]
 
     References:
         - Rosolem, R., W. J. Shuttleworth, M. Zreda, T. E. Franz, X. Zeng, and S. A. Kurc, 2013:
-            The Effect of Atmospheric Water Vapor on Neutron Count in the Cosmic-Ray Soil Moisture Observing System.
-            J. Hydrometeor., 14, 1659-1671, https://doi.org/10.1175/JHM-D-12-0120.1
+          The Effect of Atmospheric Water Vapor on Neutron Count in the Cosmic-Ray Soil Moisture Observing System.
+          J. Hydrometeor., 14, 1659-1671, https://doi.org/10.1175/JHM-D-12-0120.1
         - M. Andreasen, K.H. Jensen, D. Desilets, T.E. Franz, M. Zreda, H.R. Bogena, and M.C. Looms. 2017:
-            Status and perspectives on the cosmic-ray neutron method for soil moisture estimation
-            and other environmental science applications.
-            Vadose Zone J. 16(8). https://doi.org/10.2136/vzj2017.04.0086
+          Status and perspectives on the cosmic-ray neutron method for soil moisture estimation
+          and other environmental science applications.
+          Vadose Zone J. 16(8). https://doi.org/10.2136/vzj2017.04.0086
         - Bogena et al. (2022): https://doi.org/10.5194/essd-14-1125-2022
 
     Empirical structure constant = 0.0054
@@ -47,14 +47,14 @@ def absolute_humidity_factor(q: pl.Expr, ref_q0: float) -> pl.Expr:
         ref_q0: Site annotation for reference condition of absolute humidity [g m-3]
 
     Returns:
-        Expression or Series for absolute humidity factor, [units = None]
+        Expression or Series for absolute humidity factor [unitless]
     """
     return 1 + 0.0054 * (q - ref_q0)
 
 
 @flexible
 def atmospheric_pressure_factor(pa: pl.Expr, barometric_attenuation_length: float) -> pl.Expr:
-    """Calculate atmospheric pressure correction factor to neutron counts.
+    """Calculate atmospheric pressure correction factor to neutron counts [unitless]
 
     References:
         - CRNPy correction factor, Desilets & Zreda, 2003: https://doi.org/10.1016/S0012-821X(02)01088-9
@@ -67,7 +67,7 @@ def atmospheric_pressure_factor(pa: pl.Expr, barometric_attenuation_length: floa
             Must be in the same units as ``pa``, since the exponent is ``(pa - 1000) / L``.
 
     Returns:
-        Expression or Series for atmospheric pressure factor, [units = None]
+        Expression or Series for atmospheric pressure factor [unitless]
     """
     p0 = 1000  # "Arbitrary reference pressure [hPa]: Zreda et al. (2012) HESS" - set to a constant of 1000.0
     return ((pa - p0) / barometric_attenuation_length).exp()
@@ -75,7 +75,7 @@ def atmospheric_pressure_factor(pa: pl.Expr, barometric_attenuation_length: floa
 
 @flexible
 def correct_counts(cts_mod: pl.Expr, factor_inten: pl.Expr, factor_pa: pl.Expr, factor_q: pl.Expr) -> pl.Expr:
-    """Calculate corrected neutron counts using correction factors.
+    """Calculate corrected neutron counts using correction factors [counts h-1]
 
     Bogena et al. (2022): https://doi.org/10.5194/essd-14-1125-2022:
     "Variations of the incoming cosmic-ray intensity can have many causes, from galactic and solar disturbances to
@@ -104,7 +104,7 @@ def volumetric_water_content(
     n_min: float,
     n_max: float,
 ) -> pl.Expr:
-    """Calculate volumetric water content (VWC) from corrected neutron counts and site annotations.
+    """Calculate volumetric water content (VWC) from corrected neutron counts and site annotations [%]
 
     VWC is the total volume of water present in a given volume of soil, represented as a fraction of the
     soil volume occupied by water (the remainder of the fraction being solid particles and air pockets).
@@ -141,7 +141,7 @@ def volumetric_water_content(
 
 @flexible
 def snow_estimated_counts(cts_smo: pl.Expr, snow: pl.Expr, time: pl.Expr) -> pl.Expr:
-    """Calculate CRNS count estimates when there is snow.
+    """Calculate CRNS count estimates when there is snow [counts h-1]
 
     This derivation reconstructs CRNS counts as if there had been no snow, because snow suppresses the counts.
     During a snow event, the estimated count is set to the value of the counts just before the snow started.
@@ -187,7 +187,7 @@ def snow_estimated_counts(cts_smo: pl.Expr, snow: pl.Expr, time: pl.Expr) -> pl.
 
 @flexible
 def snow_water_equivalence(cts_smo: pl.Expr, cts_est: pl.Expr, n0_mod: float) -> pl.Expr:
-    """Calculate snow water equivalence (SWE) for an above ground COSMOS sensor.
+    """Calculate snow water equivalence (SWE) for an above ground COSMOS sensor [mm water equivalent]
 
     References:
         - Wallbank J. R., Cole S. J., Moore R. J., Anderson S. R., Mellor E. J. (2020),
@@ -215,7 +215,7 @@ def snow_water_equivalence(cts_smo: pl.Expr, cts_est: pl.Expr, n0_mod: float) ->
 
 @flexible
 def snow_water_equivalence_snowfox(cts_smo: pl.Expr, cts_est: pl.Expr) -> pl.Expr:
-    """Calculate snow water equivalence (SWE) for a below ground (SnowFox) COSMOS sensor.
+    """Calculate snow water equivalence (SWE) for a below ground (SnowFox) COSMOS sensor [mm water equivalent]
 
     References:
         - Wallbank J. R., Cole S. J., Moore R. J., Anderson S. R., Mellor E. J. (2020),
@@ -252,7 +252,8 @@ def snow_water_equivalence_snowfox(cts_smo: pl.Expr, cts_est: pl.Expr) -> pl.Exp
 
 @flexible
 def sigma_snow_water_equivalence(cts_smo: pl.Expr, cts_est: pl.Expr, n0_mod: float) -> pl.Expr:
-    """Calculate **uncertainty** in a snow water equivalence (SWE) calculation for the above ground COSMOS sensor.
+    """Calculate **uncertainty** in a snow water equivalence (SWE) calculation for the
+    above ground COSMOS sensor [mm water equivalent]
 
     References:
         - Wallbank J. R., Cole S. J., Moore R. J., Anderson S. R., Mellor E. J. (2020),
@@ -291,7 +292,7 @@ def sigma_snow_water_equivalence(cts_smo: pl.Expr, cts_est: pl.Expr, n0_mod: flo
 @flexible
 def sigma_snow_water_equivalence_snowfox(cts_smo: pl.Expr, cts_est: pl.Expr) -> pl.Expr:
     """Calculate **uncertainty** in a snow water equivalence (SWE) calculation for a below ground (SnowFox) COSMOS
-    sensor.
+    sensor [mm water equivalent]
 
     References:
         - Wallbank J. R., Cole S. J., Moore R. J., Anderson S. R., Mellor E. J. (2020),
@@ -331,14 +332,15 @@ def sigma_snow_water_equivalence_snowfox(cts_smo: pl.Expr, cts_est: pl.Expr) -> 
 def soil_moisture_index(
     cosmos_vwc: pl.Expr, wilting_point: pl.Expr, field_capacity: pl.Expr, saturation: pl.Expr
 ) -> pl.Expr:
-    """Calculate soil moisture index (SMI).
+    """Calculate soil moisture index (SMI) [unitless, 0-2]
 
     SMI is a normalised measure of soil wetness relative to the wilting point, field capacity and
     saturation of the soil:
-        - 0, when VWC is at or below the wilting point
-        - between 0 and 1, when VWC is between the wilting point and field capacity
-        - between 1 and 2, when VWC is between field capacity and saturation
-        - 2, when VWC is at or above saturation
+
+    - 0, when VWC is at or below the wilting point
+    - between 0 and 1, when VWC is between the wilting point and field capacity
+    - between 1 and 2, when VWC is between field capacity and saturation
+    - 2, when VWC is at or above saturation
 
     Reference:
         COSMOS-UK User Guide; Appendix H Soil Moisture Index
@@ -368,7 +370,7 @@ def soil_moisture_index(
 
 @flexible
 def effective_depth(cosmos_vwc: pl.Expr, ref_soc: float, ref_bulkdensity: float, ref_latticewater: float) -> pl.Expr:
-    """Original effective depth calculation from SIMPLE VWC method.
+    """Original effective depth calculation from SIMPLE VWC method [cm]
 
     References:
         - Franz TE, Zreda M, Rosolem R, Ferre TPA. (2013) A universal calibration function for
@@ -399,7 +401,7 @@ def d86(
     ref_latticewater: float,
     distance: float,
 ) -> pl.Expr:
-    """Calculate D86 value.
+    """Calculate D86 value [cm]
 
     D86 is defined as the depth to which 86% of the detected cosmic ray neutrons had contact with constituents
     of the soil. It can be calculated at given distances from the Cosmic Ray Neutron Sensor (CRNS).
@@ -408,8 +410,8 @@ def d86(
         Schrön, M., Köhli, M., Scheiffele, L., Iwema, J., Bogena, H. R., Lv, L., Martini, E., Baroni, G.,
         Rosolem, R., Weimar, J., Mai, J., Cuntz, M., Rebmann, C., Oswald, S. E., Dietrich, P., Schmidt, U.,
         and Zacharias, S.
-            Improving calibration and validation of cosmic-ray neutron sensors in the light of spatial sensitivity,
-            Hydrol. Earth Syst. Sci., 21, 5009-5030, https://doi.org/10.5194/hess-21-5009-2017, 2017
+        Improving calibration and validation of cosmic-ray neutron sensors in the light of spatial sensitivity,
+        Hydrol. Earth Syst. Sci., 21, 5009-5030, https://doi.org/10.5194/hess-21-5009-2017, 2017
 
     Args:
         cosmos_vwc: Volumetric Water Content (soil moisture) [%]
@@ -451,7 +453,7 @@ def d86(
 
 
 def _parameter_function_fp(pa: pl.Expr) -> pl.Expr:
-    """Parameter function 'Fp' for use in the D86 calculation.
+    """Parameter function 'Fp' for use in the D86 calculation [unitless]
 
     Steps taken from Schrön et al. (2017); Appendix A: The revised weighting functions
 

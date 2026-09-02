@@ -1,9 +1,8 @@
 # Configuration file for the Sphinx documentation builder.
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
-import os
 from importlib.metadata import version as get_version
 
-project = "Hydrometeorology Calculation Library"
+project = "hydrometlib"
 copyright = "2026, UKCEH"
 author = "UKCEH"
 release = get_version("hydrometlib")
@@ -22,9 +21,15 @@ extensions = [
     "sphinx_autodoc_typehints",
     "sphinx_contributors",
     "sphinx_iconify",
-    "sphinx_tabs.tabs",
-    "jupyter_sphinx",
 ]
+
+# -- Intersphinx -----------------------------------------------------------------
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "polars": ("https://docs.pola.rs/api/python/stable", None),
+    "pandas": ("https://pandas.pydata.org/docs", None),
+    "numpy": ("https://numpy.org/doc/stable", None),
+}
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints"]
@@ -47,6 +52,9 @@ html_theme_options = {
     "accent_color": "blue",
     "nav_links": [
         {"title": "Getting started", "url": "getting_started/installation"},
+        {"title": "User guide", "url": "user_guide/flexible_inputs"},
+        {"title": "Function reference", "url": "api/meteorology"},
+        {"title": "Contributing", "url": "developer/contributing"},
     ],
     "github_url": "https://github.com/NERC-CEH/hydrometlib",
 }
@@ -56,9 +64,3 @@ napoleon_google_docstring = True
 napoleon_numpy_docstring = False
 napoleon_use_param = True
 napoleon_use_rtype = False
-
-# -- Jupyter-sphinx settings -------------------------------------------------------
-# Add examples path to Python's path
-examples_path = os.path.abspath("../../src/hydrometlib/examples")
-# Make sure jupyter-sphinx uses the same path
-os.environ["PYTHONPATH"] = examples_path + os.pathsep + os.environ.get("PYTHONPATH", "")
