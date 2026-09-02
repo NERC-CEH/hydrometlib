@@ -1,8 +1,8 @@
 .. _api-cosmos:
 
-======
-cosmos
-======
+======================
+cosmos (soil moisture)
+======================
 
 .. currentmodule:: hydrometlib.cosmos
 
@@ -14,16 +14,16 @@ cosmos
     :toctree: _generated
     :nosignatures:
 
-    neutron_intensity_factor
     absolute_humidity_factor
     atmospheric_pressure_factor
     correct_counts
-    volumetric_water_content
-    effective_depth
     d86
-    soil_moisture_index
+    effective_depth
+    neutron_intensity_factor
+    sigma_snow_water_equivalence
+    sigma_snow_water_equivalence_snowfox
     snow_estimated_counts
     snow_water_equivalence
     snow_water_equivalence_snowfox
-    sigma_snow_water_equivalence
-    sigma_snow_water_equivalence_snowfox
+    soil_moisture_index
+    volumetric_water_content

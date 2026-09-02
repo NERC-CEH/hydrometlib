@@ -50,10 +50,13 @@ html_context = {
 
 html_theme_options = {
     "accent_color": "blue",
+    # Expand the first level of every sidebar toctree by default, so the per-module
+    # function lists under "Function reference" are visible without a click.
+    "globaltoc_expand_depth": 1,
     "nav_links": [
         {"title": "Getting started", "url": "getting_started/installation"},
         {"title": "User guide", "url": "user_guide/flexible_inputs"},
-        {"title": "Function reference", "url": "api/meteorology"},
+        {"title": "Function reference", "url": "api/cosmos"},
         {"title": "Contributing", "url": "developer/contributing"},
     ],
     "github_url": "https://github.com/NERC-CEH/hydrometlib",

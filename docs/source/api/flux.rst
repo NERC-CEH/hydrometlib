@@ -14,5 +14,5 @@ flux
     :toctree: _generated
     :nosignatures:
 
-    latent_heat_flux
     evapotranspiration_from_latent_heat_flux
+    latent_heat_flux

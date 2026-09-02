@@ -185,5 +185,5 @@ Where to look next
 ==================
 
 - :ref:`flexible-inputs`: the rules for what you can pass in and what comes back.
-- **Function reference**: every function, grouped by module, with its inputs,
-  units and source. Start with :doc:`../api/meteorology`.
+- **Function reference** (in the sidebar): every function, grouped by module, with its inputs,
+  units and source.

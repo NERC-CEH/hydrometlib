@@ -14,10 +14,10 @@ evapotranspiration
     :toctree: _generated
     :nosignatures:
 
-    saturation_vapour_pressure
     actual_vapour_pressure
-    vapour_pressure_curve_slope
     latent_heat_of_vaporization
-    psychrometric_constant
-    wind_speed_height_correction
     potential_evapotranspiration_30min
+    psychrometric_constant
+    saturation_vapour_pressure
+    vapour_pressure_curve_slope
+    wind_speed_height_correction
