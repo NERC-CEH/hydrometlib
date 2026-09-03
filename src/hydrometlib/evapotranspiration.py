@@ -154,14 +154,14 @@ def potential_evapotranspiration_30min(
 
     where :math:`R_n` and :math:`G` are converted from W m-2 to MJ m-2 (30 min)-1 by multiplying by
     0.0018, :math:`u_2` is the wind speed corrected to 2 m, and :math:`e_s - e_a` is the vapour
-    pressure deficit. The numerator constant 19 is the FAO-56 daily value (900) scaled to a 30-minute
-    step (900 / 48).
+    pressure deficit.
 
-    Applied here on a 30-minute step. FAO-56 on shorter timescales: "With the advent of electronic,
-    automated weather stations, weather data are increasingly reported for hourly or shorter periods
-    ... When applying the FAO Penman-Monteith equation on an hourly or shorter timescale, the equation
-    and some of the procedures for calculating meteorological data should be adjusted for the smaller
-    time step".
+    The numerator constant 19 is the FAO-56 daily value (900) scaled approximately to a 30-minute step (900 / 48).
+
+    Note from FAO-56 on shorter timescales: "With the advent of electronic,automated weather stations, weather data
+    are increasingly reported for hourly or shorter periods ... When applying the FAO Penman-Monteith equation on an
+    hourly or shorter timescale, the equation and some of the procedures for calculating meteorological data should
+    be adjusted for the smaller time step".
 
     References:
         - FAO-56 Chapter 2, FAO Penman-Monteith equation https://www.fao.org/4/x0490e/x0490e06.htm

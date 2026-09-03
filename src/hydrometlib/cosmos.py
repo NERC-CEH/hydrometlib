@@ -560,8 +560,8 @@ def d86(
 
     # Calculate adjusted distance r_star
     fp = _parameter_function_fp(pa)
-    # NOTE: There is a Fveg function in Schrön et al. (2017) that can adjust the D86 based on vegetation height.
-    #   This would need a wider metadata update that is out of scope as of [08/2026]
+    # NOTE: Schrön et al. (2017) also define an Fveg function that adjusts D86 for vegetation height.
+    #   That requires a vegetation-height input which is not handled here, so Fveg is fixed at 1.0.
     fveg = 1.0
     r_star = distance / fp / fveg
 

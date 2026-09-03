@@ -103,10 +103,10 @@ def test_snow_water_equivalence_theoretical(mode: str) -> None:
 @pytest.mark.parametrize("mode", MODES)
 def test_snow_water_equivalence_real_data(mode: str) -> None:
     """Test that SWE matches real COSMOS-UK values."""
-    # Taken from COSMOS.LEVEL3_DATA_1DAY Oracle DB view:
+    # Reference values from published COSMOS-UK daily Level 3 data:
     #   Site: BALRD,
     #   Dates: [2018-03-04 00:00:00, 2015-11-29 00:00:00, 2021-02-09 00:00:00]
-    # n0_mod 2966.89129 from COSMOS.CALIBRATION_INFO BALRD method=4.
+    # n0_mod 2966.89129 is the published BALRD field calibration (method 4).
     got = run_case(
         c.snow_water_equivalence,
         {
@@ -216,7 +216,7 @@ def test_effective_depth(mode: str) -> None:
 )
 def test_d86(mode: str, distance: float, expected: list[float]) -> None:
     """Test the d86 calculation."""
-    # Taken from COSMOS.LEVEL3_DATA_1DAY Oracle DB view:
+    # Reference values from published COSMOS-UK daily Level 3 data:
     #   Site: HOLLN,
     #   Dates: [2015-03-14, 2017-05-30, 2022-01-18, 2026-08-01]
     got = run_case(

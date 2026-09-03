@@ -67,7 +67,7 @@ def test_wind_speed_height_correction(mode: str) -> None:
 @pytest.mark.parametrize("mode", MODES)
 def test_potential_evapotranspiration_30min(mode: str) -> None:
     """Test that end-to-end 30-minute Penman-Monteith PET matches observed COSMOS-UK values."""
-    # Taken from COSMOS.LEVEL3_DATA_30MIN Oracle DB view:
+    # Reference values from published COSMOS-UK 30-minute Level 3 data:
     #   Site: CHOBH,
     #   Dates: [2015-03-14 04:30:00, 2017-05-30 16:30:00, 2022-01-18 09:30:00, 2023-08-21 11:00:00]
     got = run_case(
