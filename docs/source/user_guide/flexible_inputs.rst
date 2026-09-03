@@ -70,19 +70,43 @@ are the same for every row.
 
 In the function reference, constant arguments are the ones typed ``float`` rather than ``pl.Expr``.
 
-Rules
-=====
+Optional column arguments
+=========================
 
-**All column arguments in one call must be the same kind.** Mix a ``pl.Series`` with a
-``pd.Series`` in the same call and you get a ``TypeError`` explaining which argument was which.
-Column names and expressions count as the same kind and can be combined.
+A few functions have a column argument you can leave out. In the function reference these are typed
+``pl.Expr | None`` and have a default of ``None``. When omitted, the calculation falls back to a
+sensible default and the argument takes no part in the "same kind" or "same length" rules.
+
+For example, :func:`~hydrometlib.evapotranspiration.potential_evapotranspiration_30min` takes an
+optional ``wind_height`` column. Provide it (as a column, so it can vary over time) when the wind
+sensor is not at 2 m; omit it when it is:
 
 .. code-block:: python
 
-    # fine - str and pl.Expr together
+    from hydrometlib import evapotranspiration as et
+
+    # wind sensor at 2 m - no height correction
+    et.potential_evapotranspiration_30min("rn", "g", "ta", "rh", "ws", "pa")
+
+    # wind sensor height varies row by row
+    et.potential_evapotranspiration_30min("rn", "g", "ta", "rh", "ws", "pa", "wind_height")
+
+Rules
+=====
+
+**All column arguments in one call must be the same kind.** Pick one of ``pl.Expr``, column
+name, ``pl.Series``, ``pd.Series`` or ``np.ndarray`` and use it for every column argument.
+Mixing kinds gives a ``TypeError`` explaining which argument was which.
+
+.. code-block:: python
+
+    # fine - every column argument is a column name
+    meteorology.net_radiation("swin", "swout", "lwin", "lwout")
+
+    # TypeError - a column name mixed with an expression
     meteorology.net_radiation("swin", pl.col("swout") * 1.0, "lwin", "lwout")
 
-    # TypeError - pl.Series and pd.Series in one call
+    # TypeError - a pl.Series mixed with a pd.Series
     meteorology.net_radiation(pl.Series(...), pd.Series(...), pl.Series(...), pl.Series(...))
 
 **Series and array inputs must be the same length.** Passing Series or arrays of different

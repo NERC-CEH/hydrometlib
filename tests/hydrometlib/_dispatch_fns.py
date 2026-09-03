@@ -20,3 +20,9 @@ def add(a: pl.Expr, b: pl.Expr) -> pl.Expr:
 def scale(col: pl.Expr, factor: float) -> pl.Expr:
     """Multiply a column by a scalar factor."""
     return col * factor
+
+
+@flexible
+def add_optional(a: pl.Expr, b: pl.Expr | None = None) -> pl.Expr:
+    """Add ``b`` to ``a``, or return ``a`` unchanged when ``b`` is omitted."""
+    return a if b is None else a + b

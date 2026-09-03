@@ -139,7 +139,7 @@ def wind_speed_height_correction(ws: pl.Expr, measured_height: pl.Expr) -> pl.Ex
 
 @flexible
 def potential_evapotranspiration_30min(
-    rn: pl.Expr, g: pl.Expr, ta: pl.Expr, rh: pl.Expr, ws: pl.Expr, pa: pl.Expr, wind_height: pl.Expr
+    rn: pl.Expr, g: pl.Expr, ta: pl.Expr, rh: pl.Expr, ws: pl.Expr, pa: pl.Expr, wind_height: pl.Expr | None = None
 ) -> pl.Expr:
     r"""Calculate potential evapotranspiration (pet) [mm 30min-1]
 
@@ -153,8 +153,9 @@ def potential_evapotranspiration_30min(
                    {\Delta + \gamma \, (1 + 0.34 \, u_2)}
 
     where :math:`R_n` and :math:`G` are converted from W m-2 to MJ m-2 (30 min)-1 by multiplying by
-    0.0018, :math:`u_2` is the wind speed corrected to 2 m, and :math:`e_s - e_a` is the vapour
-    pressure deficit.
+    0.0018, :math:`e_s - e_a` is the vapour pressure deficit, and :math:`u_2` is the wind speed at
+    2 m: corrected from ``wind_height`` when that is given, otherwise ``ws`` is taken to already be
+    at 2 m.
 
     The numerator constant 19 is the FAO-56 daily value (900) scaled approximately to a 30-minute step (900 / 48).
 
@@ -168,13 +169,16 @@ def potential_evapotranspiration_30min(
         - FAO-56 Chapter 4 (eq. 53), hourly time step https://www.fao.org/4/x0490e/x0490e08.htm
 
     Args:
-        rn: Net radiation [W m-2] (converted to MJ m-2 30min-1 internally)
-        g: Soil heat flux density [W m-2] (converted to MJ m-2 30min-1 internally)
+        rn: Net radiation [W m-2]
+        g: Soil heat flux density [W m-2]
         ta: Air temperature [degC]
         rh: Relative humidity [%]
-        ws: Wind speed measured at ``wind_height`` [m s-1] (corrected to 2 m internally)
+        ws: Wind speed measured at ``wind_height`` [m s-1]
         pa: Atmospheric pressure [hPa]
-        wind_height: Height above ground of the wind sensor [m]
+        wind_height: Optional height above ground of the wind sensor [m]. This is a column, not a
+            single value, so it can vary row by row (for example if the sensor is moved). Omit it
+            (or pass ``None``) when the sensor is at the standard 2 m height, in which case no
+            height correction is applied to ``ws``.
 
     Returns:
         Expression or Series computing PET [mm 30min-1]
@@ -185,7 +189,7 @@ def potential_evapotranspiration_30min(
     delta = vapour_pressure_curve_slope(es, ta)
     lv = latent_heat_of_vaporization(ta)
     gamma = psychrometric_constant(pa, lv)
-    ws_2m = wind_speed_height_correction(ws, wind_height)
+    ws_2m = wind_speed_height_correction(ws, wind_height) if wind_height is not None else ws
 
     # Convert RN and G from W/m2 - MJ per 30 min (input provided as W/m2)
     rn_mj = rn * 0.0018

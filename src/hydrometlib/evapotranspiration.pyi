@@ -34,7 +34,7 @@ def potential_evapotranspiration_30min(
     rh: pl.Expr,
     ws: pl.Expr,
     pa: pl.Expr,
-    wind_height: pl.Expr,
+    wind_height: pl.Expr | None = None,
 ) -> pl.Expr: ...
 @overload
 def potential_evapotranspiration_30min(
@@ -44,7 +44,7 @@ def potential_evapotranspiration_30min(
     rh: str,
     ws: str,
     pa: str,
-    wind_height: str,
+    wind_height: str | None = None,
 ) -> pl.Expr: ...
 @overload
 def potential_evapotranspiration_30min(
@@ -54,7 +54,7 @@ def potential_evapotranspiration_30min(
     rh: pl.Series,
     ws: pl.Series,
     pa: pl.Series,
-    wind_height: pl.Series,
+    wind_height: pl.Series | None = None,
 ) -> pl.Series: ...
 @overload
 def potential_evapotranspiration_30min(
@@ -64,7 +64,7 @@ def potential_evapotranspiration_30min(
     rh: pd.Series,
     ws: pd.Series,
     pa: pd.Series,
-    wind_height: pd.Series,
+    wind_height: pd.Series | None = None,
 ) -> pd.Series: ...
 @overload
 def potential_evapotranspiration_30min(
@@ -74,7 +74,7 @@ def potential_evapotranspiration_30min(
     rh: np.ndarray,
     ws: np.ndarray,
     pa: np.ndarray,
-    wind_height: np.ndarray,
+    wind_height: np.ndarray | None = None,
 ) -> np.ndarray: ...
 @overload
 def psychrometric_constant(pa: pl.Expr, lv: pl.Expr) -> pl.Expr: ...

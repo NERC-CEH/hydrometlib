@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import polars as pl
 import pytest
-from _dispatch_fns import add, scale
+from _dispatch_fns import add, add_optional, scale
 from polars.testing import assert_series_equal
 
 
@@ -172,6 +172,43 @@ class TestUnsupportedArguments:
         """Test that numpy numeric scalars are accepted where a constant is expected."""
         out = scale(pl.Series("x", [1.0, 2.0]), np.float64(10.0))
         assert out.to_list() == [10.0, 20.0]
+
+
+class TestOptionalColumn:
+    """A parameter annotated ``pl.Expr | None`` may be omitted, and then plays no part in dispatch."""
+
+    def test_omitted_in_expr_mode(self) -> None:
+        """Test that omitting the optional column returns an expression built from the other columns."""
+        result = add_optional("x")
+        assert isinstance(result, pl.Expr)
+        df = pl.DataFrame({"x": [1.0, 2.0]}).select(result.alias("out"))
+        assert df["out"].to_list() == [1.0, 2.0]
+
+    def test_explicit_none_matches_omitted(self) -> None:
+        """Test that passing ``None`` explicitly behaves the same as omitting the argument."""
+        out = add_optional(pl.Series("x", [1.0, 2.0]), None)
+        assert_series_equal(out, pl.Series("add_optional", [1.0, 2.0]))
+
+    def test_provided_optional_column_is_used(self) -> None:
+        """Test that a supplied optional column is treated like any other column argument."""
+        out = add_optional(pl.Series("x", [1.0, 2.0]), pl.Series("y", [10.0, 20.0]))
+        assert_series_equal(out, pl.Series("add_optional", [11.0, 22.0]))
+
+    def test_omitted_does_not_force_a_mode(self) -> None:
+        """Test that the omitted column does not clash with pandas Series in the other argument."""
+        out = add_optional(pd.Series([1.0, 2.0]))
+        assert isinstance(out, pd.Series)
+        assert out.to_list() == [1.0, 2.0]
+
+    def test_omitted_is_exempt_from_the_equal_length_check(self) -> None:
+        """Test that the omitted column is ignored when Series lengths are compared."""
+        out = add_optional(pl.Series("x", [1.0, 2.0, 3.0]))
+        assert out.to_list() == [1.0, 2.0, 3.0]
+
+    def test_provided_optional_column_must_match_kind(self) -> None:
+        """Test that a supplied optional column still has to match the other column arguments."""
+        with pytest.raises(TypeError):
+            add_optional(pl.Series("x", [1.0]), "y")  # pyright: ignore[reportCallIssue, reportArgumentType]  # noqa deliberately wrong type
 
 
 class TestMetadata:

@@ -8,18 +8,22 @@ and return a ``pl.Expr``. The :func:`flexible` decorator lets callers use them w
 * ``pl.Series`` in  -> ``pl.Series`` out;
 * ``pd.Series`` in  -> ``pd.Series`` out (requires the ``pandas`` extra library installation);
 * ``np.ndarray`` in  -> ``np.ndarray`` out (requires the ``numpy`` extra library installation).
+
+A parameter annotated ``pl.Expr | None`` is an optional column: callers may omit it, and the
+calculation then receives ``None`` and chooses a fallback.
 """
 
 import functools
 import inspect
 import numbers
 import sys
+import types
 from collections.abc import Callable
-from typing import Any, Literal
+from typing import Any, Literal, Union, get_args, get_origin
 
 import polars as pl
 
-Kind = Literal["expr", "pl_series", "pd_series", "np_array", "str", "scalar", "unsupported"]
+Kind = Literal["expr", "pl_series", "pd_series", "np_array", "str", "scalar", "omitted", "unsupported"]
 Mode = Literal["expr", "polars", "pandas", "numpy"]
 
 _COLUMN_KIND_NAMES: dict[Kind, str] = {
@@ -37,6 +41,26 @@ _MODE_FOR_KIND: dict[Kind, Mode] = {
     "pd_series": "pandas",
     "np_array": "numpy",
 }
+
+
+def _column_annotation(annotation: object) -> tuple[bool, bool]:
+    """Classify a parameter annotation as a column parameter and whether it is optional.
+
+    A column parameter is annotated ``pl.Expr``. An *optional* column parameter is annotated
+    ``pl.Expr | None`` (equivalently ``Optional[pl.Expr]``); it may be omitted, in which case the
+    calculation receives ``None`` and decides what to do with it.
+
+    Args:
+        annotation: The parameter's annotation, as resolved by :func:`inspect.signature`.
+
+    Returns:
+        A ``(is_column, is_optional)`` pair.
+    """
+    if annotation is pl.Expr:
+        return True, False
+    if get_origin(annotation) in (Union, types.UnionType) and set(get_args(annotation)) == {pl.Expr, type(None)}:
+        return True, True
+    return False, False
 
 
 def _classify(value: object, expects_column: bool) -> Kind:
@@ -185,18 +209,22 @@ def flexible[**P](func: Callable[P, pl.Expr]) -> Callable[P, pl.Expr]:
 
     Parameters annotated ``pl.Expr`` in the parent function are considered to be "column-like", and accept a
     ``pl.Expr``, a column-name ``str``, a ``pl.Series``, a ``pd.Series`` or a ``np.ndarray``. Every column-like
-    argument in one call must be the same kind. Every other parameter is a constant and accepts only a number.
+    argument in one call must be the same kind. A parameter annotated ``pl.Expr | None`` is an *optional*
+    column: it may be omitted (``None``), in which case the calculation receives ``None`` and it takes no part
+    in the same-kind or equal-length checks. Every other parameter is a constant and accepts only a number.
     The wrapped function returns the same type as the input column-like parameters.
 
     Args:
         func: The calculation to wrap. It must be written as a pure Polars expression, with every
-            column-like parameter annotated ``pl.Expr`` and returning a ``pl.Expr``.
+            column-like parameter annotated ``pl.Expr`` (or ``pl.Expr | None``) and returning a ``pl.Expr``.
 
     Returns:
         The wrapped calculation.
     """
     sig = inspect.signature(func, eval_str=True)
-    columns = {name: parameter.annotation is pl.Expr for name, parameter in sig.parameters.items()}
+    _annotations = {name: _column_annotation(p.annotation) for name, p in sig.parameters.items()}
+    columns = {name: is_column for name, (is_column, _) in _annotations.items()}
+    optional_columns = {name: is_optional for name, (_, is_optional) in _annotations.items()}
 
     @functools.wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> Any:
@@ -217,14 +245,25 @@ def flexible[**P](func: Callable[P, pl.Expr]) -> Callable[P, pl.Expr]:
         bound = sig.bind(*args, **kwargs)
         bound.apply_defaults()
         values = bound.arguments
-        kinds: dict[str, Kind] = {name: _classify(value, columns[name]) for name, value in values.items()}
+        kinds: dict[str, Kind] = {
+            name: "omitted" if (optional_columns[name] and value is None) else _classify(value, columns[name])
+            for name, value in values.items()
+        }
 
         _check_supported(func.__name__, values, kinds, columns)
         mode = _decide_mode(func.__name__, kinds)
         series = _to_polars_series(values, kinds, mode)
 
         call = {
-            name: (pl.col(name) if name in series else pl.col(value) if kinds[name] == "str" else value)
+            name: (
+                None
+                if kinds[name] == "omitted"
+                else pl.col(name)
+                if name in series
+                else pl.col(value)
+                if kinds[name] == "str"
+                else value
+            )
             for name, value in values.items()
         }
         expr = _evaluate(func, call)

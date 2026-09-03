@@ -84,3 +84,21 @@ def test_potential_evapotranspiration_30min(mode: str) -> None:
         mode=mode,
     )
     assert_allclose(got, [0.00573, 0.14733, 0.03617, 0.17283], atol=0.001)
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_potential_evapotranspiration_30min_wind_height_optional(mode: str) -> None:
+    """Test that omitting wind_height skips the height correction and uses ws directly at 2 m."""
+    got = run_case(
+        et.potential_evapotranspiration_30min,
+        {
+            "rn": [-68.181, 302.85, 116.2, 364.6],
+            "g": [-29.6453, 32.23711, -23.7416, 16.64824],
+            "ta": [1.977, 19.62, -2.144, 20.54],
+            "rh": [72.5, 57.62, 95.6, 65.41],
+            "ws": [2.89954, 3.204, 0.214, 2.048],
+            "pa": [1024.0, 1011.365, 1033.649, 1020.695],
+        },
+        mode=mode,
+    )
+    assert_allclose(got, [0.00637, 0.14784, 0.03610, 0.17271], atol=0.001)
