@@ -27,55 +27,34 @@ Polars
 Inside ``with_columns`` or ``select``, refer to columns by name (a plain string) or with
 ``pl.col``:
 
-.. code-block:: python
+.. literalinclude:: ../examples/quick_start.py
+   :language: python
+   :start-after: [start:polars_expressions]
+   :end-before: [end:polars_expressions]
+   :dedent:
 
-    import polars as pl
-    from hydrometlib import meteorology
+.. jupyter-execute::
+   :hide-code:
 
-    df = pl.DataFrame(
-        {
-            "swin": [22.9, 19.3, 14.0, 25.1],
-            "swout": [4.9, 4.2, 3.0, 5.5],
-            "lwin": [24.1, 26.0, 26.2, 23.1],
-            "lwout": [31.2, 31.9, 30.9, 30.8],
-        }
-    )
+   from examples import quick_start
 
-    df = df.with_columns(
-        rn=meteorology.net_radiation("swin", "swout", "lwin", "lwout")
-    )
-
-.. code-block:: text
-
-    shape: (4, 5)
-    ┌──────┬───────┬──────┬───────┬──────┐
-    │ swin ┆ swout ┆ lwin ┆ lwout ┆ rn   │
-    │ ---  ┆ ---   ┆ ---  ┆ ---   ┆ ---  │
-    │ f64  ┆ f64   ┆ f64  ┆ f64   ┆ f64  │
-    ╞══════╪═══════╪══════╪═══════╪══════╡
-    │ 22.9 ┆ 4.9   ┆ 24.1 ┆ 31.2  ┆ 10.9 │
-    │ 19.3 ┆ 4.2   ┆ 26.0 ┆ 31.9  ┆ 9.2  │
-    │ 14.0 ┆ 3.0   ┆ 26.2 ┆ 30.9  ┆ 6.3  │
-    │ 25.1 ┆ 5.5   ┆ 23.1 ┆ 30.8  ┆ 11.9 │
-    └──────┴───────┴──────┴───────┴──────┘
+   quick_start.polars_expressions()
 
 You can also call a function with :class:`polars.Series` directly and get a Series straight back,
 without a DataFrame:
 
-.. code-block:: python
+.. literalinclude:: ../examples/quick_start.py
+   :language: python
+   :start-after: [start:polars_series]
+   :end-before: [end:polars_series]
+   :dedent:
 
-    swin = pl.Series("swin", [22.9, 19.3])
-    swout = pl.Series("swout", [4.9, 4.2])
-    lwin = pl.Series("lwin", [24.1, 26.0])
-    lwout = pl.Series("lwout", [31.2, 31.9])
+.. jupyter-execute::
+   :hide-code:
 
-    meteorology.net_radiation(swin, swout, lwin, lwout)
-    # shape: (2,)
-    # Series: 'net_radiation' [f64]
-    # [
-    #     10.9
-    #     9.2
-    # ]
+   from examples import quick_start
+
+   quick_start.polars_series()
 
 Pandas
 ======
@@ -83,29 +62,18 @@ Pandas
 Pass :class:`pandas.Series` (for example, columns of a DataFrame) and a Series comes back, ready
 to assign as a new column:
 
-.. code-block:: python
+.. literalinclude:: ../examples/quick_start.py
+   :language: python
+   :start-after: [start:pandas_series]
+   :end-before: [end:pandas_series]
+   :dedent:
 
-    import pandas as pd
-    from hydrometlib import meteorology
+.. jupyter-execute::
+   :hide-code:
 
-    df = pd.DataFrame(
-        {
-            "swin": [22.9, 19.3, 14.0, 25.1],
-            "swout": [4.9, 4.2, 3.0, 5.5],
-            "lwin": [24.1, 26.0, 26.2, 23.1],
-            "lwout": [31.2, 31.9, 30.9, 30.8],
-        }
-    )
+   from examples import quick_start
 
-    df["rn"] = meteorology.net_radiation(df["swin"], df["swout"], df["lwin"], df["lwout"])
-
-.. code-block:: text
-
-       swin  swout  lwin  lwout    rn
-    0  22.9    4.9  24.1   31.2  10.9
-    1  19.3    4.2  26.0   31.9   9.2
-    2  14.0    3.0  26.2   30.9   6.3
-    3  25.1    5.5  23.1   30.8  11.9
+   quick_start.pandas_series()
 
 Pandas support needs the ``pandas`` extra (see :ref:`installation`).
 
@@ -114,18 +82,18 @@ NumPy
 
 Pass :class:`numpy.ndarray` and an array comes back:
 
-.. code-block:: python
+.. literalinclude:: ../examples/quick_start.py
+   :language: python
+   :start-after: [start:numpy_arrays]
+   :end-before: [end:numpy_arrays]
+   :dedent:
 
-    import numpy as np
-    from hydrometlib import meteorology
+.. jupyter-execute::
+   :hide-code:
 
-    swin = np.array([22.9, 19.3])
-    swout = np.array([4.9, 4.2])
-    lwin = np.array([24.1, 26.0])
-    lwout = np.array([31.2, 31.9])
+   from examples import quick_start
 
-    meteorology.net_radiation(swin, swout, lwin, lwout)
-    # array([10.9,  9.2])
+   quick_start.numpy_arrays()
 
 NumPy support needs the ``numpy`` extra (see :ref:`installation`).
 
@@ -141,49 +109,38 @@ sensible heat flux, then evapotranspiration from that.
     .. tab-item:: :iconify:`simple-icons:polars` Polars
         :sync: polars
 
-        .. code-block:: python
+        .. literalinclude:: ../examples/quick_start.py
+           :language: python
+           :start-after: [start:chaining_polars]
+           :end-before: [end:chaining_polars]
+           :dedent:
 
-            import polars as pl
-            from hydrometlib import flux
+        .. jupyter-execute::
+           :hide-code:
 
-            df = pl.DataFrame(
-                {
-                    "rn": [80.0, 120.0],
-                    "shf": [5.0, 8.0],
-                    "h": [30.0, 40.0],
-                    "ta": [15.0, 18.0],
-                }
-            )
+           from examples import quick_start
 
-            df = df.with_columns(
-                le=flux.latent_heat_flux("rn", "shf", "h"),
-            ).with_columns(
-                et=flux.evapotranspiration_from_latent_heat_flux("le", "ta"),
-            )
+           quick_start.chaining_polars()
 
     .. tab-item:: :iconify:`devicon:pandas` Pandas
         :sync: pandas
 
-        .. code-block:: python
+        .. literalinclude:: ../examples/quick_start.py
+           :language: python
+           :start-after: [start:chaining_pandas]
+           :end-before: [end:chaining_pandas]
+           :dedent:
 
-            import pandas as pd
-            from hydrometlib import flux
+        .. jupyter-execute::
+           :hide-code:
 
-            df = pd.DataFrame(
-                {
-                    "rn": [80.0, 120.0],
-                    "shf": [5.0, 8.0],
-                    "h": [30.0, 40.0],
-                    "ta": [15.0, 18.0],
-                }
-            )
+           from examples import quick_start
 
-            df["le"] = flux.latent_heat_flux(df["rn"], df["shf"], df["h"])
-            df["et"] = flux.evapotranspiration_from_latent_heat_flux(df["le"], df["ta"])
+           quick_start.chaining_pandas()
 
 Where to look next
 ==================
 
 - :ref:`flexible-inputs`: the rules for what you can pass in and what comes back.
-- **Function reference** (in the sidebar): every function, grouped by module, with its inputs,
-  units and source.
+- :doc:`All calculations <../api/index>`: the full list of hydrometeorological calculations in the
+  library, grouped by module, each with its inputs, units and source.

@@ -1,11 +1,18 @@
 """Shared helpers for the calculation tests."""
 
 import math
+import sys
 from collections.abc import Callable, Sequence
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
 import polars as pl
+
+# Make the user guide's example package importable, so test_examples.py can run the code the docs show.
+# This lives here rather than in a repo-root conftest.py because a second top-level "conftest" module
+# would shadow this one, which the calculation tests import MODES/run_case/assert_allclose from.
+sys.path.insert(0, str(Path(__file__).parents[1] / "docs" / "source"))
 
 MODES = ["expr", "pl_series", "pd_series"]
 

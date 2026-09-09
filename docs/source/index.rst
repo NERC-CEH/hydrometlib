@@ -2,9 +2,9 @@
 
 :layout: landing
 
-====================================
-Hydrometeorology Calculation Library
-====================================
+===========
+hydrometlib
+===========
 
 .. rst-class:: lead
 
@@ -20,6 +20,9 @@ Current version: |release|
 ``hydrometlib`` is a small, focused collection of the standard calculations used to turn raw hydrometeorological
 measurements into derived quantities: net radiation, potential evapotranspiration, absolute humidity, soil moisture
 from cosmic-ray neutron counts, and more. Each one is a single function you call with the data types you already have.
+
+For a full list of the hydrometeorological calculations included in this library, see
+:doc:`All calculations <api/index>`.
 
 .. grid:: 1 1 3 3
     :gutter: 2
@@ -87,6 +90,7 @@ This project is licensed under the `MIT <https://github.com/NERC-CEH/hydrometlib
     :maxdepth: 2
     :caption: Function reference
 
+    api/index
     api/meteorology
     api/evapotranspiration
     api/cosmos_soil_moisture
@@ -99,3 +103,4 @@ This project is licensed under the `MIT <https://github.com/NERC-CEH/hydrometlib
     :caption: Developer guide
 
     developer/contributing
+    developer/documentation

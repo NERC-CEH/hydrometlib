@@ -54,19 +54,11 @@ Some parameters are not columns: a site altitude, a latitude, a calibration coef
 threshold. These are *constant arguments* and take a single number (``int`` or ``float``). They
 are the same for every row.
 
-.. code-block:: python
-
-    from hydrometlib import cosmos
-
-    cosmos.volumetric_water_content(
-        "cts_mod_corr",       # column argument
-        ref_soc=0.01,         # constant arguments from here on
-        ref_bulkdensity=1.35,
-        ref_latticewater=0.02,
-        n0_mod=2000,
-        n_min=400,
-        n_max=4000,
-    )
+.. literalinclude:: ../examples/flexible_inputs.py
+   :language: python
+   :start-after: [start:constant_arguments]
+   :end-before: [end:constant_arguments]
+   :dedent:
 
 In the function reference, constant arguments are the ones typed ``float`` rather than ``pl.Expr``.
 
@@ -81,15 +73,11 @@ For example, :func:`~hydrometlib.evapotranspiration.potential_evapotranspiration
 optional ``wind_height`` column. Provide it (as a column, so it can vary over time) when the wind
 sensor is not at 2 m; omit it when it is:
 
-.. code-block:: python
-
-    from hydrometlib import evapotranspiration as et
-
-    # wind sensor at 2 m - no height correction
-    et.potential_evapotranspiration_30min("rn", "g", "ta", "rh", "ws", "pa")
-
-    # wind sensor height varies row by row
-    et.potential_evapotranspiration_30min("rn", "g", "ta", "rh", "ws", "pa", "wind_height")
+.. literalinclude:: ../examples/flexible_inputs.py
+   :language: python
+   :start-after: [start:optional_column_argument]
+   :end-before: [end:optional_column_argument]
+   :dedent:
 
 Rules
 =====
@@ -98,23 +86,57 @@ Rules
 name, ``pl.Series``, ``pd.Series`` or ``np.ndarray`` and use it for every column argument.
 Mixing kinds gives a ``TypeError`` explaining which argument was which.
 
-.. code-block:: python
+.. literalinclude:: ../examples/flexible_inputs.py
+   :language: python
+   :start-after: [start:one_kind_per_call]
+   :end-before: [end:one_kind_per_call]
+   :dedent:
 
-    # fine - every column argument is a column name
-    meteorology.net_radiation("swin", "swout", "lwin", "lwout")
+.. jupyter-execute::
+   :hide-code:
 
-    # TypeError - a column name mixed with an expression
-    meteorology.net_radiation("swin", pl.col("swout") * 1.0, "lwin", "lwout")
+   from examples import flexible_inputs
 
-    # TypeError - a pl.Series mixed with a pd.Series
-    meteorology.net_radiation(pl.Series(...), pd.Series(...), pl.Series(...), pl.Series(...))
+   flexible_inputs.one_kind_per_call()
 
 **Series and array inputs must be the same length.** Passing Series or arrays of different
 lengths raises a ``ValueError``.
 
-**Column arguments only take numeric data.** Passing something that is not a number (or, for a
-column argument, not one of the accepted container types) raises a ``TypeError`` naming the
-argument.
+.. literalinclude:: ../examples/flexible_inputs.py
+   :language: python
+   :start-after: [start:same_length]
+   :end-before: [end:same_length]
+   :dedent:
+
+.. jupyter-execute::
+   :hide-code:
+
+   from examples import flexible_inputs
+
+   flexible_inputs.same_length()
+
+**Each argument must be a valid value for its parameter.** A column argument that is not one of
+the accepted container types, or a constant argument that is not a number, raises a ``TypeError``
+naming the argument.
+
+.. literalinclude:: ../examples/flexible_inputs.py
+   :language: python
+   :start-after: [start:unsupported_types]
+   :end-before: [end:unsupported_types]
+   :dedent:
+
+.. jupyter-execute::
+   :hide-code:
+
+   from examples import flexible_inputs
+
+   flexible_inputs.unsupported_types()
+
+.. note::
+
+   These checks are about the *kind* of thing you pass, not the data inside it. A Polars Series
+   holding non-numeric values is an accepted container, so the error for it comes from Polars when
+   the calculation runs, not from ``hydrometlib``.
 
 Which form should I use?
 ========================

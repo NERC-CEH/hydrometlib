@@ -52,7 +52,7 @@ new unit tests to improve the robustness of the code, or going deeper to add new
 1. Clone the repository
 2. Create your feature branch (``git checkout -b feature/amazing-feature``)
 3. Make your changes, with tests and documentation
-4. Run the test suite and docs build (see `Testing`_).
+4. Run the test suite and docs build (see `Testing`_ and :doc:`documentation`).
 5. Commit your changes (``git commit -m 'Add some amazing feature'``)
 6. Push to the branch (``git push origin feature/amazing-feature``)
 7. Open a Pull Request
@@ -130,7 +130,7 @@ We use `pytest` for running unit tests and coverage.
 
 .. code-block:: bash
 
-   pytest tests/test_base.py
+   pytest tests/hydrometlib/test_meteorology.py
 
 **CI/CD**
 

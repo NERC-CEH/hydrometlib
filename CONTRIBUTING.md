@@ -39,7 +39,6 @@ make docs-serve
 This starts a local server at http://localhost:8000 with live reload. Edit files in `docs/` or add docstrings
 to your code (the API reference page is auto-generated).
 
-
 ### Submit Feedback
 
 The best way to send feedback is to file an issue at
@@ -49,7 +48,6 @@ If you are proposing a feature:
 
 - Explain in detail how it would work.
 - Keep the scope as narrow as possible, to make it easier to implement.
-
 
 ## Get Started
 
@@ -75,7 +73,6 @@ Ready to contribute? Here's how to set up hydrometlib for local development.
    ```sh
    make install-hooks
    ```
-
 
 1. Create a branch for local development off `develop`:
 
@@ -127,7 +124,6 @@ uv run pytest tests/
 
 ## Releasing a New Version
 
-
 Releases go through `develop` -> `main` to keep `main` in sync with what is published.
 
 1. **On `develop`**, bump the version and create a CHANGELOG stub:
@@ -145,7 +141,6 @@ Releases go through `develop` -> `main` to keep `main` in sync with what is publ
    git push origin develop
    ```
 
-
 3. **Open a release PR** from develop to main:
    ```bash
    make release
@@ -161,6 +156,3 @@ Releases go through `develop` -> `main` to keep `main` in sync with what is publ
    ```
    When run from `main`, this creates an annotated `v*` tag, pushes it to GitHub, and
    creates a GitHub Release.
-
-
-
