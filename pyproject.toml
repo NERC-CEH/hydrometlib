@@ -1,12 +1,11 @@
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
 name = "hydrometlib"
-version = "0.1.0"
-description = "A trusted library of verified and referenced hydrometeoroloigical calculations and derivations."
+version = "1.0.0"
+description = "A trusted library of verified and referenced hydrometeorological calculations and derivations."
 readme = "README.md"
 authors = [
   {name = "Richard Smith", email = "ricsmi@ceh.ac.uk"}
@@ -19,17 +18,26 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 license = { file = "LICENSE" }
-dependencies = []
+dependencies = [
+    "polars>=1.42.1",
+]
 requires-python = ">= 3.12"
+
+[project.optional-dependencies]
+pandas = [
+    "pandas>=2.2",
+    "pyarrow>=17",
+]
+numpy = [
+    "numpy>=1.26",
+]
 
 [dependency-groups]
 dev = [
     { include-group = "lint" },
     { include-group = "test" },
     { include-group = "typecheck" },
-
     { include-group = "docs" },
-
 ]
 lint = [
     "ruff",
@@ -38,9 +46,13 @@ test = [
     "coverage",
     "pytest",
     "pytest-cov",
+    "pandas>=2.2",
+    "pyarrow>=17",
+    "numpy>=1.26",
 ]
 typecheck = [
     "pyright",
+    "pandas-stubs",
 ]
 docs = [
     "sphinx",
@@ -52,6 +64,12 @@ docs = [
     "sphinx-autobuild",
     "sphinx-contributors>=0.2.7",
     "myst-parser",
+    # Runs the user guide's example code at build time and renders its output. The examples
+    # demonstrate the pandas and NumPy input paths, so those are needed to build the docs.
+    "jupyter-sphinx>=0.5.3",
+    "pandas>=2.2",
+    "pyarrow>=17",
+    "numpy>=1.26",
 ]
 
 
@@ -65,7 +83,11 @@ homepage = "https://github.com/NERC-CEH/hydrometlib"
 [tool.pyright]
 venvPath = "."
 venv = ".venv"
-include = ["src", "tests"]
+include = ["src", "tests", "docs/source/examples"]
+reportUnnecessaryComparison = "error"
+# Makes a "pyright: ignore" an assertion that the call really is rejected: if an overload ever starts
+# accepting something tests/hydrometlib/test_type_inference.py expects it to refuse, this fails.
+reportUnnecessaryTypeIgnoreComment = "error"
 
 [tool.ruff]
 line-length = 120
@@ -104,8 +126,14 @@ exclude_also = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "--cov=src --cov-report=term-missing"
+# "src" is here so that --doctest-modules collects any ">>>" examples in the docstrings, which are
+# rendered into the function reference. The user guide's examples live in docs/source/examples and are
+# run by tests/hydrometlib/test_examples.py.
+#
+# Note: no --import-mode=importlib. The calculation tests do "from conftest import MODES, ...", which
+# relies on pytest's default rootdir sys.path insertion.
+testpaths = ["tests", "src"]
+addopts = "--cov=src --cov-report=term-missing --doctest-modules"
 
 [tool.uv]
 package = true
