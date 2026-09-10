@@ -2,6 +2,7 @@
 
 import ast
 import importlib.util
+import inspect
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -9,9 +10,11 @@ from typing import Any
 import pytest
 
 import hydrometlib
+from hydrometlib._dispatch import _column_annotation
 
-# What each overload's column parameters accept, in declaration order.
-_KINDS = ("pl.Expr", "str", "pl.Series", "pd.Series", "np.ndarray")
+# What each overload's column parameters accept, in declaration order. The last takes every column
+# argument as a number and evaluates the calculation for that single set of values.
+_KINDS = ("pl.Expr", "str", "pl.Series", "pd.Series", "np.ndarray", "float")
 
 
 def _generator() -> ModuleType:
@@ -119,3 +122,23 @@ def test_every_calculation_is_declared_for_every_input_kind(module_name: str) ->
         got = len(declared[name])
         assert got == len(_KINDS), f"{module_name}.{name} has {got} overloads, expected {len(_KINDS)}"
     assert set(declared) == _calculations(module), f"{module_name}.pyi declares functions the module does not define"
+
+
+@pytest.mark.parametrize("module_name", sorted(hydrometlib.__all__))
+def test_every_calculation_keeps_a_plain_data_column(module_name: str) -> None:
+    """Test the invariant that keeps the overloads unambiguous.
+
+    A site attribute is declared ``{kind} | float``, so it cannot decide which overload a call matches;
+    a plain data column can, because its type differs in each. If every column parameter of a
+    calculation were an attribute, an all-number call would match several overloads with different
+    return types and both pyright and mypy would report the overlap.
+    """
+    module: Any = getattr(hydrometlib, module_name)
+    for name in sorted(_calculations(module)):
+        annotations = inspect.signature(getattr(module, name), eval_str=True).parameters
+        plain = [
+            parameter
+            for parameter, spec in annotations.items()
+            if _column_annotation(spec.annotation)[0] and not _column_annotation(spec.annotation)[2]
+        ]
+        assert plain, f"{module_name}.{name} has no plain data column - every column parameter is an Attribute"

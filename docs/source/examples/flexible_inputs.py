@@ -11,40 +11,35 @@ import polars as pl
 from hydrometlib import meteorology
 
 
-def constant_arguments() -> None:
-    """Mix column arguments with the single numbers that are the same for every row."""
-    # [start:constant_arguments]
+def site_attributes() -> None:
+    """Give the site attributes as single numbers, or as columns when a frame covers several sites."""
+    # [start:site_attributes]
     from hydrometlib import cosmos
 
+    # 1. Pass through a number for each attribute: the attributes
+    #    are static values from a single site
     cosmos.volumetric_water_content(
-        "cts_mod_corr",  # column argument
-        ref_soc=0.01,  # constant arguments from here on
+        "cts_mod_corr",  # measured column
+        ref_soc=0.01,  # site attributes from here on
         ref_bulkdensity=1.35,
         ref_latticewater=0.02,
         n0_mod=2000,
         n_min=400,
         n_max=4000,
     )
-    # [end:constant_arguments]
 
-
-def optional_column_argument() -> None:
-    """Show a column argument that can be left out entirely."""
-    # fmt: off
-    # [start:optional_column_argument]
-    from hydrometlib import evapotranspiration as et
-
-    # wind sensor at 2 m - no height correction
-    et.potential_evapotranspiration_30min(
-        "rn", "g", "ta", "rh", "ws", "pa"
+    # 2. Pass through columns for an attribute: for example, your data
+    #    may have several sites in one frame so the attributes can vary across rows
+    cosmos.volumetric_water_content(
+        "cts_mod_corr",
+        ref_soc="ref_soc",
+        ref_bulkdensity="ref_bulkdensity",
+        ref_latticewater="ref_latticewater",
+        n0_mod="n0_mod",
+        n_min=400,  # still a single number if it is the same everywhere
+        n_max=4000,
     )
-
-    # wind sensor height varies row by row
-    et.potential_evapotranspiration_30min(
-        "rn", "g", "ta", "rh", "ws", "pa", "wind_height"
-    )
-    # [end:optional_column_argument]
-    # fmt: on
+    # [end:site_attributes]
 
 
 def one_kind_per_call() -> None:
@@ -87,18 +82,9 @@ def same_length() -> None:
     # [end:same_length]
 
 
-def unsupported_types() -> None:
-    """Show the error when an argument is not a valid value for its parameter."""
-    # [start:unsupported_types]
-    # a column argument given something that is not one of the accepted containers
-    try:
-        meteorology.net_radiation([22.9, 19.3], "swout", "lwin", "lwout")
-    except TypeError as err:
-        print(err)
-
-    # a constant argument given something that is not a number
-    try:
-        meteorology.mean_sea_level_pressure("pa", "ta", altitude="high")
-    except TypeError as err:
-        print(err)
-    # [end:unsupported_types]
+def all_constant_call() -> None:
+    """Give every argument as a number to evaluate a calculation there and then."""
+    # [start:all_constant_call]
+    # a value comes straight back, rather than a column to add to a frame
+    print(meteorology.net_radiation(100.0, 20.0, 300.0, 350.0))
+    # [end:all_constant_call]

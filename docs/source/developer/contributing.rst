@@ -81,23 +81,13 @@ regenerate them from your signatures:
 
     make stubs
 
-``make qa`` runs this too, so in practice it happens on its own. ``tests/hydrometlib/test_overloads.py`` fails if
-what is committed no longer matches the source, and ``tests/hydrometlib/test_type_inference.py`` checks the
-declarations infer the types they promise.
+What the stub generator needs from you:
 
-What the generator needs from you:
+- Annotate a **data column** - a measured quantity, one value per row - ``pl.Expr``
+- Annotate a **site attribute** ``Attribute``, imported from ``hydrometlib._dispatch``
+- Reserve ``float`` for a quantity that can never be a column.
 
-- Annotate every column parameter ``pl.Expr``, or ``pl.Expr | None`` when it is optional and the calculation
-  chooses a fallback (see ``potential_evapotranspiration_30min``). This is what ``flexible`` reads at runtime to
-  work out which arguments are columns, so it has to be exact.
-- Annotate parameters that are single values rather than columns (a site altitude, a calibration coefficient)
-  ``float``. They are copied into the declarations unchanged.
-
-The declarations cannot live beside the implementations, tempting though it looks: an overload declared next to
-an implementation must be consistent with it, and these deliberately are not, because the implementation only
-ever accepts a ``pl.Expr``. pyright tolerates it, but mypy and PyCharm both reject it. Keeping them in a stub also
-leaves the implementations annotated ``pl.Expr``, so ``make type-check`` still checks the body of every
-calculation.
+``flexible`` reads these annotations at runtime to work out how to carry out the calculation, so they have to be exact.
 
 Your calculation also needs an entry in the function reference (see :doc:`documentation`) and tests covering each
 input mode, ideally against a worked example from the paper or standard it cites.

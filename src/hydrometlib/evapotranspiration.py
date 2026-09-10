@@ -1,6 +1,6 @@
 import polars as pl
 
-from hydrometlib._dispatch import flexible
+from hydrometlib._dispatch import Attribute, flexible
 
 
 @flexible
@@ -115,7 +115,7 @@ def psychrometric_constant(pa: pl.Expr, lv: pl.Expr) -> pl.Expr:
 
 
 @flexible
-def wind_speed_height_correction(ws: pl.Expr, measured_height: pl.Expr) -> pl.Expr:
+def wind_speed_height_correction(ws: pl.Expr, measured_height: Attribute) -> pl.Expr:
     r"""Convert wind speed to 2m height [m s-1]
 
     .. math::
@@ -129,7 +129,7 @@ def wind_speed_height_correction(ws: pl.Expr, measured_height: pl.Expr) -> pl.Ex
 
     Args:
         ws: Wind speed measured at ``measured_height`` [m s-1]
-        measured_height: The height above ground the wind was measured at [m]
+        measured_height: Site attribute - height above ground the wind was measured at [m]
 
     Returns:
         Expression or Series to calculate wind speed height correction
@@ -139,7 +139,7 @@ def wind_speed_height_correction(ws: pl.Expr, measured_height: pl.Expr) -> pl.Ex
 
 @flexible
 def potential_evapotranspiration_30min(
-    rn: pl.Expr, g: pl.Expr, ta: pl.Expr, rh: pl.Expr, ws: pl.Expr, pa: pl.Expr, wind_height: pl.Expr | None = None
+    rn: pl.Expr, g: pl.Expr, ta: pl.Expr, rh: pl.Expr, ws: pl.Expr, pa: pl.Expr, wind_height: Attribute | None = None
 ) -> pl.Expr:
     r"""Calculate potential evapotranspiration (pet) [mm 30min-1]
 
@@ -175,10 +175,10 @@ def potential_evapotranspiration_30min(
         rh: Relative humidity [%]
         ws: Wind speed measured at ``wind_height`` [m s-1]
         pa: Atmospheric pressure [hPa]
-        wind_height: Optional height above ground of the wind sensor [m]. This is a column, not a
-            single value, so it can vary row by row (for example if the sensor is moved). Omit it
-            (or pass ``None``) when the sensor is at the standard 2 m height, in which case no
-            height correction is applied to ``ws``.
+        wind_height: Site attribute - optional height above ground of the wind sensor [m]. Give it
+            as the single value it usually is, or as a column when the height varies row by row (for
+            example if the sensor is moved). Omit it (or pass ``None``) when the sensor is at the
+            standard 2 m height, in which case no height correction is applied to ``ws``.
 
     Returns:
         Expression or Series computing PET [mm 30min-1]

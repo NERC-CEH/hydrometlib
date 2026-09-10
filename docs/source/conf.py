@@ -75,14 +75,14 @@ html_context = {
 
 html_theme_options = {
     "accent_color": "blue",
-    # Expand the first level of every sidebar toctree by default, so the per-module
-    # function lists under "Function reference" are visible without a click.
-    "globaltoc_expand_depth": 1,
+    # Keep the sidebar toctrees collapsed by default: the per-module function lists sit
+    # behind a caret, and the branch for the current page still opens on its own.
+    "globaltoc_expand_depth": 0,
     "nav_links": [
         {"title": "Getting started", "url": "getting_started/installation"},
         {"title": "User guide", "url": "user_guide/flexible_inputs"},
-        {"title": "Function reference", "url": "api/index"},
-        {"title": "Contributing", "url": "developer/contributing"},
+        {"title": "Library", "url": "api/index"},
+        {"title": "Development", "url": "developer/contributing"},
     ],
     "github_url": "https://github.com/NERC-CEH/hydrometlib",
 }

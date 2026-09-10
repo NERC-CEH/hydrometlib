@@ -11,10 +11,13 @@ In              Out             Notes
 ``pl.Series``   ``pl.Series``
 ``pd.Series``   ``pd.Series``   Requires the ``pandas`` extra library installation.
 ``np.ndarray``  ``np.ndarray``  Requires the ``numpy`` extra library installation.
+``float``       ``float``
 ==============  ==============  ============================================================
 
-A parameter annotated ``pl.Expr | None`` is an optional column: callers may omit it, and the calculation then
-receives ``None`` and chooses a fallback.
+Calculation functions may also take ``Attribute`` arguments.  These are often constant values that are required for a
+calculation, such as site attributes (e.g. elevation, reference soil bulk density, latitude etc.). These are
+generally provided as ``float``, but can also be given as a standard column-type (as outlined in the table above) if
+the value may vary over the rows of your dataframe.
 """
 
 import functools
@@ -23,12 +26,21 @@ import numbers
 import sys
 import types
 from collections.abc import Callable
-from typing import Any, Literal, Union, get_args, get_origin
+from typing import Annotated, Any, Literal, Union, get_args, get_origin
 
 import polars as pl
 
-Kind = Literal["expr", "pl_series", "pd_series", "np_array", "str", "scalar", "omitted", "unsupported"]
-Mode = Literal["expr", "polars", "pandas", "numpy"]
+Kind = Literal["expr", "pl_series", "pd_series", "np_array", "str", "lit", "scalar", "omitted", "unsupported"]
+Mode = Literal["expr", "polars", "pandas", "numpy", "constant"]
+
+
+class _AttributeMarker:
+    """A simple metadata marker used by the Attribute type so that things can detect anything
+    typed with it as an 'attribute'."""
+
+
+# A parameter that can either be a column or a static number. Use ``Attribute | None`` for one that may also be omitted.
+Attribute = Annotated[pl.Expr, _AttributeMarker]
 
 _COLUMN_KIND_NAMES: dict[Kind, str] = {
     "expr": "pl.Expr",
@@ -47,24 +59,44 @@ _MODE_FOR_KIND: dict[Kind, Mode] = {
 }
 
 
-def _column_annotation(annotation: object) -> tuple[bool, bool]:
-    """Classify a parameter annotation as a column parameter and whether it is optional.
+def _column_annotation(annotation: object) -> tuple[bool, bool, bool]:
+    """Classify a parameter annotation as a column parameter, whether it is optional, and whether it is an attribute.
 
     A column parameter is annotated ``pl.Expr``. An *optional* column parameter is annotated
     ``pl.Expr | None``; it may be omitted, in which case the calculation receives ``None`` and decides what to do
-    with it.
+    with it. Either form wrapped in ``Annotated[..., Attribute]`` is a site attribute, which may also be given as
+    a single number - see :class:`Attribute`.
 
     Args:
         annotation: The parameter's annotation, as resolved by :func:`inspect.signature`.
 
     Returns:
-        A ``(is_column, is_optional)`` pair.
+        An ``(is_column, is_optional, is_attribute)`` triple.
     """
-    if annotation is pl.Expr:
-        return True, False
-    if get_origin(annotation) in (Union, types.UnionType) and set(get_args(annotation)) == {pl.Expr, type(None)}:
-        return True, True
-    return False, False
+    inner, is_attribute = _unwrap_attribute(annotation)
+    if inner is pl.Expr:
+        return True, False, is_attribute
+    if get_origin(inner) in (Union, types.UnionType):
+        args = [_unwrap_attribute(a) for a in get_args(inner)]
+        if {a for a, _ in args} == {pl.Expr, type(None)}:
+            return True, True, is_attribute or any(marked for _, marked in args)
+    return False, False, False
+
+
+def _unwrap_attribute(annotation: object) -> tuple[object, bool]:
+    """Strip an ``Annotated`` wrapper, reporting whether it carried the :class:`Attribute` marker.
+
+    Args:
+        annotation: The annotation to strip.
+
+    Returns:
+        An ``(inner_annotation, is_attribute)`` pair; the annotation is returned unchanged when it is not
+        ``Annotated``.
+    """
+    metadata = getattr(annotation, "__metadata__", None)
+    if metadata is None:
+        return annotation, False
+    return getattr(annotation, "__origin__", annotation), _AttributeMarker in metadata
 
 
 def _classify(value: object, expects_column: bool) -> Kind:
@@ -88,6 +120,8 @@ def _classify(value: object, expects_column: bool) -> Kind:
         return "pl_series"
     if isinstance(value, str):
         return "str"
+    if not isinstance(value, bool) and isinstance(value, numbers.Real):
+        return "lit"
     np = sys.modules.get("numpy")
     if np is not None and isinstance(value, np.ndarray):
         return "np_array"
@@ -119,12 +153,48 @@ def _check_supported(func_name: str, values: dict[str, Any], kinds: dict[str, Ki
             raise TypeError(f"{func_name}(): {name} expects {wanted}, got {type(values[name]).__name__}.")
 
 
-def _decide_mode(func_name: str, kinds: dict[str, Kind]) -> Mode:
+def _is_constant_call(
+    func_name: str, kinds: dict[str, Kind], columns: dict[str, bool], attributes: dict[str, bool]
+) -> bool:
+    """Decide whether every column argument was given as a number, and reject a half-way call.
+
+    A site attribute may always be a number. A plain data column may only be one when *every* column
+    argument is, which evaluates the calculation for a single set of values.
+
+    Args:
+        func_name: Name of the wrapped calculation, used only in error messages.
+        kinds: Mapping of argument name to the dispatch kind returned by :func:`_classify`.
+        columns: Mapping of argument name to whether its parameter is annotated ``pl.Expr``.
+        attributes: Mapping of argument name to whether its parameter is marked :class:`Attribute`.
+
+    Returns:
+        Whether this call gave a number for every column argument.
+
+    Raises:
+        TypeError: If a number was given for a data column alongside real columns.
+    """
+    column_kinds = {name: kind for name, kind in kinds.items() if columns[name]}
+    all_constant = bool(column_kinds) and all(kind in ("lit", "omitted") for kind in column_kinds.values())
+    if all_constant:
+        return True
+
+    for name, kind in column_kinds.items():
+        if kind == "lit" and not attributes[name]:
+            raise TypeError(
+                f"{func_name}(): {name} is a data column, so it expects a pl.Expr, a column-name str, a "
+                f"pl.Series, a pd.Series or a np.ndarray, not a number. Pass every column argument as a "
+                f"number to evaluate {func_name}() for a single set of values."
+            )
+    return False
+
+
+def _decide_mode(func_name: str, kinds: dict[str, Kind], constant_call: bool) -> Mode:
     """Decide which evaluation mode to use, or raise ``TypeError`` if the column kinds are mixed.
 
     Args:
         func_name: Name of the wrapped calculation, used only in error messages.
         kinds: Mapping of argument name to the dispatch kind returned by :func:`_classify`.
+        constant_call: Whether every column argument was given as a number.
 
     Returns:
         The mode that :func:`flexible` should evaluate in.
@@ -132,6 +202,9 @@ def _decide_mode(func_name: str, kinds: dict[str, Kind]) -> Mode:
     Raises:
         TypeError: If the column arguments are not all the same kind.
     """
+    if constant_call:
+        return "constant"
+
     present: set[Kind] = {kind for kind in kinds.values() if kind in _COLUMN_KIND_NAMES}
 
     if len(present) > 1:
@@ -221,8 +294,9 @@ def flexible[**P](func: Callable[P, pl.Expr]) -> Callable[P, pl.Expr]:
     """
     sig = inspect.signature(func, eval_str=True)
     _annotations = {name: _column_annotation(p.annotation) for name, p in sig.parameters.items()}
-    columns = {name: is_column for name, (is_column, _) in _annotations.items()}
-    optional_columns = {name: is_optional for name, (_, is_optional) in _annotations.items()}
+    columns = {name: is_column for name, (is_column, _, _) in _annotations.items()}
+    optional_columns = {name: is_optional for name, (_, is_optional, _) in _annotations.items()}
+    attributes = {name: is_attribute for name, (_, _, is_attribute) in _annotations.items()}
 
     @functools.wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> Any:
@@ -249,7 +323,8 @@ def flexible[**P](func: Callable[P, pl.Expr]) -> Callable[P, pl.Expr]:
         }
 
         _check_supported(func.__name__, values, kinds, columns)
-        mode = _decide_mode(func.__name__, kinds)
+        constant_call = _is_constant_call(func.__name__, kinds, columns, attributes)
+        mode = _decide_mode(func.__name__, kinds, constant_call)
         series = _to_polars_series(values, kinds, mode)
 
         call = {
@@ -260,12 +335,16 @@ def flexible[**P](func: Callable[P, pl.Expr]) -> Callable[P, pl.Expr]:
                 if name in series
                 else pl.col(value)
                 if kinds[name] == "str"
+                else pl.lit(value)
+                if kinds[name] == "lit"
                 else value
             )
             for name, value in values.items()
         }
         expr = _evaluate(func, call)
 
+        if mode == "constant":
+            return pl.select(expr.alias(func.__name__)).item()
         if not series:
             return expr
 

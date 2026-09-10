@@ -1,8 +1,8 @@
 .. _api-index:
 
-==================
-All calculations
-==================
+===================
+Calculation Library
+===================
 
 .. rst-class:: lead
 

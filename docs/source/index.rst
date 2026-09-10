@@ -14,15 +14,15 @@ Current version: |release|
 
 .. container:: buttons
 
-    `Getting started <getting_started/installation.html>`_
+    `Docs <getting_started/installation.html>`_
     `GitHub <https://github.com/NERC-CEH/hydrometlib>`_
 
 ``hydrometlib`` is a small, focused collection of the standard calculations used to turn raw hydrometeorological
 measurements into derived quantities: net radiation, potential evapotranspiration, absolute humidity, soil moisture
 from cosmic-ray neutron counts, and more. Each one is a single function you call with the data types you already have.
 
-For a full list of the hydrometeorological calculations included in this library, see
-:doc:`All calculations <api/index>`.
+For a full list of the hydrometeorological calculations included, see the
+:doc:`calculation library <api/index>`.
 
 .. grid:: 1 1 3 3
     :gutter: 2
@@ -32,7 +32,8 @@ For a full list of the hydrometeorological calculations included in this library
     .. grid-item-card:: :octicon:`arrow-switch` Flexible inputs
 
         Call every function with a Polars expression, a column name, a Polars Series, a pandas
-        Series, or a NumPy array. The result comes back in the same form you passed in.
+        Series, or a NumPy array. The result comes back in the same form you passed in. Site
+        attributes take a plain number just as readily as a column.
 
     .. grid-item-card:: :octicon:`verified` Referenced and tested
 
@@ -84,11 +85,12 @@ This project is licensed under the `MIT <https://github.com/NERC-CEH/hydrometlib
     :caption: User guide
 
     user_guide/flexible_inputs
+    user_guide/chaining
 
 .. toctree::
     :hidden:
     :maxdepth: 2
-    :caption: Function reference
+    :caption: Calculation library
 
     api/index
     api/meteorology

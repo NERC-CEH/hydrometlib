@@ -22,9 +22,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-# A column parameter, as annotated on an implementation, and its optional form.
+# The parameter categories, as annotated on an implementation. A data column carries measured values;
+# an Attribute is a site attribute that may instead be given as the single number it usually is.
 COLUMN = "pl.Expr"
 OPTIONAL_COLUMN = "pl.Expr | None"
+ATTRIBUTE = "Attribute"
+OPTIONAL_ATTRIBUTE = "Attribute | None"
+CONSTANT = "float"
 
 # What each overload's column parameters accept, and what that overload returns. A column name is the
 # one kind whose result differs from its argument. ``pl.Expr`` leads deliberately - see the module
@@ -35,6 +39,7 @@ KINDS = {
     "pl.Series": "pl.Series",
     "pd.Series": "pd.Series",
     "np.ndarray": "np.ndarray",
+    CONSTANT: "float | None",
 }
 
 HEADER = '''"""Type stubs for ``hydrometlib.{module}``.
@@ -71,9 +76,6 @@ def calculations(tree: ast.Module) -> list[ast.FunctionDef]:
 def overload_for(function: ast.FunctionDef, kind: str) -> str:
     """Render one overload declaration for a calculation.
 
-    Column parameters take ``kind``; every other parameter keeps the annotation and default the
-    implementation gives it.
-
     Args:
         function: The calculation to declare
         kind: What a column parameter accepts, one of :data:`KINDS`
@@ -92,6 +94,10 @@ def overload_for(function: ast.FunctionDef, kind: str) -> str:
             annotation = kind
         elif annotation == OPTIONAL_COLUMN:
             annotation = f"{kind} | None"
+        elif annotation == ATTRIBUTE:
+            annotation = CONSTANT if kind == CONSTANT else f"{kind} | {CONSTANT}"
+        elif annotation == OPTIONAL_ATTRIBUTE:
+            annotation = f"{CONSTANT} | None" if kind == CONSTANT else f"{kind} | {CONSTANT} | None"
         parameter = f"{argument.arg}: {annotation}"
         if argument.arg in defaults:
             parameter += f" = {defaults[argument.arg]}"

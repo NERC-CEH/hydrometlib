@@ -54,6 +54,31 @@ def test_an_optional_column_can_be_omitted_or_given() -> None:
     )
 
 
+def test_a_site_attribute_may_be_a_number_or_a_column() -> None:
+    """Test that an attribute given as a number leaves the result kind decided by the real columns."""
+    assert_type(evapotranspiration.wind_speed_height_correction(pl.col("ws"), 10.0), pl.Expr)
+    assert_type(evapotranspiration.wind_speed_height_correction("ws", 10.0), pl.Expr)
+    assert_type(evapotranspiration.wind_speed_height_correction(pl.Series([3.0]), 10.0), pl.Series)
+    assert_type(evapotranspiration.wind_speed_height_correction(pd.Series([3.0]), 10.0), "pd.Series")
+    assert_type(evapotranspiration.wind_speed_height_correction(np.array([3.0]), 10.0), np.ndarray)
+    # and it is still a column when you have one
+    assert_type(evapotranspiration.wind_speed_height_correction(pl.Series([3.0]), pl.Series([10.0])), pl.Series)
+    assert_type(cosmos.soil_moisture_index(pl.Series([25.0]), 10.0, 30.0, 45.0), pl.Series)
+
+
+def test_an_all_constant_call_gives_a_value() -> None:
+    """Test that giving every column argument as a number returns a number rather than an expression."""
+    assert_type(meteorology.net_radiation(100.0, 20.0, 300.0, 350.0), "float | None")
+    assert_type(evapotranspiration.wind_speed_height_correction(10.0, 10.0), "float | None")
+
+
+def test_a_data_column_refuses_a_number_beside_real_columns() -> None:
+    """Test that only attributes take a number while the other arguments are columns."""
+    s = pl.Series([1.0])
+    with pytest.raises(TypeError, match="is a data column"):
+        meteorology.net_radiation(s, 0.0, s, s)  # pyright: ignore[reportCallIssue, reportArgumentType]
+
+
 def test_mixing_column_kinds_is_rejected() -> None:
     """Test that the constrained type parameter refuses a call mixing kinds, as dispatch does at runtime.
 
