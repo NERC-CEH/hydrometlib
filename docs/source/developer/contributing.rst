@@ -57,6 +57,51 @@ new unit tests to improve the robustness of the code, or going deeper to add new
 6. Push to the branch (``git push origin feature/amazing-feature``)
 7. Open a Pull Request
 
+Adding a calculation
+--------------------
+
+Write the calculation as a pure Polars expression, annotate its column parameters ``pl.Expr``, and wrap it in
+``@flexible``:
+
+.. code-block:: python
+
+    @flexible
+    def net_radiation(swin: pl.Expr, swout: pl.Expr, lwin: pl.Expr, lwout: pl.Expr) -> pl.Expr:
+        r"""Calculate net radiation (rn) [W m-2]
+        ...
+        """
+        return swin - swout + lwin - lwout
+
+``flexible`` lets callers pass a ``pl.Expr``, a column-name ``str``, a ``pl.Series``, a ``pd.Series`` or a
+``np.ndarray`` and get the same kind back. No decorator can describe that transform to a type checker, so the
+accepted types are declared as ``@overload``s in the module's ``.pyi`` stub. **You do not write those by hand** -
+regenerate them from your signatures:
+
+.. code-block:: bash
+
+    make stubs
+
+``make qa`` runs this too, so in practice it happens on its own. ``tests/hydrometlib/test_overloads.py`` fails if
+what is committed no longer matches the source, and ``tests/hydrometlib/test_type_inference.py`` checks the
+declarations infer the types they promise.
+
+What the generator needs from you:
+
+- Annotate every column parameter ``pl.Expr``, or ``pl.Expr | None`` when it is optional and the calculation
+  chooses a fallback (see ``potential_evapotranspiration_30min``). This is what ``flexible`` reads at runtime to
+  work out which arguments are columns, so it has to be exact.
+- Annotate parameters that are single values rather than columns (a site altitude, a calibration coefficient)
+  ``float``. They are copied into the declarations unchanged.
+
+The declarations cannot live beside the implementations, tempting though it looks: an overload declared next to
+an implementation must be consistent with it, and these deliberately are not, because the implementation only
+ever accepts a ``pl.Expr``. pyright tolerates it, but mypy and PyCharm both reject it. Keeping them in a stub also
+leaves the implementations annotated ``pl.Expr``, so ``make type-check`` still checks the body of every
+calculation.
+
+Your calculation also needs an entry in the function reference (see :doc:`documentation`) and tests covering each
+input mode, ideally against a worked example from the paper or standard it cites.
+
 Pull requests
 -------------
 Your pull request should follow these guidelines:

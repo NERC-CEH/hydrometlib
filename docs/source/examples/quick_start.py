@@ -17,6 +17,7 @@ _ENERGY_BALANCE = {
 
 def polars_expressions() -> None:
     """Derive a column inside with_columns, naming the input columns as plain strings."""
+    # fmt: off
     # [start:polars_expressions]
     import polars as pl
 
@@ -31,8 +32,21 @@ def polars_expressions() -> None:
         }
     )
 
-    df = df.with_columns(rn=meteorology.net_radiation("swin", "swout", "lwin", "lwout"))
+    # string inputs should match your dataframe column names:
+    df = df.with_columns(
+        rn=meteorology.net_radiation(
+            "swin", "swout", "lwin", "lwout"
+        )
+    )
+
+    # equivalent with pl.col():
+    df = df.with_columns(
+        rn=meteorology.net_radiation(
+            pl.col("swin"), pl.col("swout"), pl.col("lwin"), pl.col("lwout")
+        )
+    )
     # [end:polars_expressions]
+    # fmt: on
     print(df)
 
 

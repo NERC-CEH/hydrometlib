@@ -3,14 +3,18 @@
 The calculation functions in this package are written as pure Polars expressions: they take ``pl.Expr`` arguments
 and return a ``pl.Expr``. The :func:`flexible` decorator lets callers use them with whatever they happen to have:
 
-* ``pl.Expr`` in  -> ``pl.Expr`` out;
-* column-name ``str`` in  -> ``pl.Expr`` out;
-* ``pl.Series`` in  -> ``pl.Series`` out;
-* ``pd.Series`` in  -> ``pd.Series`` out (requires the ``pandas`` extra library installation);
-* ``np.ndarray`` in  -> ``np.ndarray`` out (requires the ``numpy`` extra library installation).
+==============  ==============  ============================================================
+In              Out             Notes
+==============  ==============  ============================================================
+``pl.Expr``     ``pl.Expr``
+``str``         ``pl.Expr``     A column name, converted to ``pl.col()`` internally.
+``pl.Series``   ``pl.Series``
+``pd.Series``   ``pd.Series``   Requires the ``pandas`` extra library installation.
+``np.ndarray``  ``np.ndarray``  Requires the ``numpy`` extra library installation.
+==============  ==============  ============================================================
 
-A parameter annotated ``pl.Expr | None`` is an optional column: callers may omit it, and the
-calculation then receives ``None`` and chooses a fallback.
+A parameter annotated ``pl.Expr | None`` is an optional column: callers may omit it, and the calculation then
+receives ``None`` and chooses a fallback.
 """
 
 import functools
@@ -47,8 +51,8 @@ def _column_annotation(annotation: object) -> tuple[bool, bool]:
     """Classify a parameter annotation as a column parameter and whether it is optional.
 
     A column parameter is annotated ``pl.Expr``. An *optional* column parameter is annotated
-    ``pl.Expr | None`` (equivalently ``Optional[pl.Expr]``); it may be omitted, in which case the
-    calculation receives ``None`` and decides what to do with it.
+    ``pl.Expr | None``; it may be omitted, in which case the calculation receives ``None`` and decides what to do
+    with it.
 
     Args:
         annotation: The parameter's annotation, as resolved by :func:`inspect.signature`.
@@ -117,9 +121,6 @@ def _check_supported(func_name: str, values: dict[str, Any], kinds: dict[str, Ki
 
 def _decide_mode(func_name: str, kinds: dict[str, Kind]) -> Mode:
     """Decide which evaluation mode to use, or raise ``TypeError`` if the column kinds are mixed.
-
-    Every column argument must be the same kind: all expressions, all column names, or all Series
-    of one library.
 
     Args:
         func_name: Name of the wrapped calculation, used only in error messages.
@@ -190,9 +191,6 @@ def _to_polars_series(values: dict[str, Any], kinds: dict[str, Kind], mode: Mode
 
 def _evaluate(func: Callable[..., pl.Expr], call: dict[str, Any]) -> pl.Expr:
     """Call a calculation with the arguments dispatch has prepared for it.
-
-    ``flexible`` types the calculation with a ``ParamSpec``, which cannot describe a call built
-    from a dict; widening to ``Callable[..., pl.Expr]`` here keeps that signature on ``flexible``.
 
     Args:
         func: The undecorated calculation.

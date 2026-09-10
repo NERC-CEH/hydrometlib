@@ -175,7 +175,7 @@ class TestUnsupportedArguments:
 
 
 class TestOptionalColumn:
-    """A parameter annotated ``pl.Expr | None`` may be omitted, and then plays no part in dispatch."""
+    """A parameter annotated ``Column | None`` may be omitted, and then plays no part in dispatch."""
 
     def test_omitted_in_expr_mode(self) -> None:
         """Test that omitting the optional column returns an expression built from the other columns."""

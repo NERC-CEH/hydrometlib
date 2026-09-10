@@ -85,6 +85,9 @@ venvPath = "."
 venv = ".venv"
 include = ["src", "tests", "docs/source/examples"]
 reportUnnecessaryComparison = "error"
+# Makes a "pyright: ignore" an assertion that the call really is rejected: if an overload ever starts
+# accepting something tests/hydrometlib/test_type_inference.py expects it to refuse, this fails.
+reportUnnecessaryTypeIgnoreComment = "error"
 
 [tool.ruff]
 line-length = 120

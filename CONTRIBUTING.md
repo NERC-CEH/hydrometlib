@@ -112,7 +112,10 @@ Before you submit a pull request, check that it meets these guidelines:
 1. The pull request should include tests.
 2. If the pull request adds functionality, the docs should be updated. Put your new functionality into a function
 with a docstring, and add the feature to the list in README.md.
-3. The pull request should pass all quality checks (`make qa`) and GitHub Actions, making sure that the tests pass for all supported Python versions.
+3. If the pull request adds or changes a calculation, run `make stubs` to regenerate the `.pyi` files that
+describe its flexible inputs, and commit them. See
+[Adding a calculation](https://nerc-ceh.github.io/hydrometlib/developer/contributing.html#adding-a-calculation).
+4. The pull request should pass all quality checks (`make qa`) and GitHub Actions, making sure that the tests pass for all supported Python versions.
 
 ## Tips
 

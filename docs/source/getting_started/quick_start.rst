@@ -16,7 +16,7 @@ What you get back depends on what you put in:
 - pass **Polars Series**, **Pandas Series** or **NumPy arrays** and the calculation runs
   immediately, returning the same type with the results;
 - pass a **Polars expression** or a **column name** and you get a Polars *expression* back: a
-  recipe you hand to ``select`` or ``with_columns`` for Polars to run.
+  recipe you can then hand to ``select`` or ``with_columns`` for Polars to run.
 
 Parameters that are single values rather than columns (a site altitude, a latitude, a calibration
 coefficient) are passed as ordinary numbers.
@@ -24,8 +24,8 @@ coefficient) are passed as ordinary numbers.
 Polars
 ======
 
-Inside ``with_columns`` or ``select``, refer to columns by name (a plain string) or with
-``pl.col``:
+Refer to columns by name (a plain string) or with ``pl.col`` and you get a Polars expression back, which you can then
+hand off to e.g. ``with_columns`` to get Polars to execute against your dataframe:
 
 .. literalinclude:: ../examples/quick_start.py
    :language: python
