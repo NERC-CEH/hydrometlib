@@ -1,10 +1,10 @@
 import polars as pl
 
-from hydrometlib._dispatch import flexible
+from hydrometlib._dispatch import Attribute, flexible
 
 
 @flexible
-def neutron_intensity_factor(crns_count: pl.Expr, ref_c0: float, gamma: float) -> pl.Expr:
+def neutron_intensity_factor(crns_count: pl.Expr, ref_c0: Attribute, gamma: Attribute) -> pl.Expr:
     r"""Calculate incoming neutron count intensity correction factor using a background reference station [unitless]
 
     .. math::
@@ -22,7 +22,7 @@ def neutron_intensity_factor(crns_count: pl.Expr, ref_c0: float, gamma: float) -
         crns_count: Neutron counts from the reference neutron monitor, as a count rate over the same interval as
             ``ref_c0`` [e.g. counts h-1]. Only the ratio ``crns_count / ref_c0`` is used, so any count rate works
             provided ``ref_c0`` shares it.
-        ref_c0: Site attribute - scaling reference for the neutron counts, on the same basis as
+        ref_c0: Site attribute - scaling reference for the neutron counts, on the same count rate as
             ``crns_count`` [e.g. counts h-1]
         gamma: Site attribute - scaling factor to adjust for geomagnetic effects [unitless]
 
@@ -33,7 +33,7 @@ def neutron_intensity_factor(crns_count: pl.Expr, ref_c0: float, gamma: float) -
 
 
 @flexible
-def absolute_humidity_factor(q: pl.Expr, ref_q0: float) -> pl.Expr:
+def absolute_humidity_factor(q: pl.Expr, ref_q0: Attribute) -> pl.Expr:
     r"""Calculate absolute humidity correction factor to neutron counts [unitless]
 
     .. math::
@@ -57,7 +57,7 @@ def absolute_humidity_factor(q: pl.Expr, ref_q0: float) -> pl.Expr:
 
     Args:
         q: Absolute humidity [g m-3] (grams per cubic meter)
-        ref_q0: Site annotation for reference condition of absolute humidity [g m-3]
+        ref_q0: Site attribute - reference condition of absolute humidity [g m-3]
 
     Returns:
         Expression or Series for absolute humidity factor [unitless]
@@ -66,7 +66,7 @@ def absolute_humidity_factor(q: pl.Expr, ref_q0: float) -> pl.Expr:
 
 
 @flexible
-def atmospheric_pressure_factor(pa: pl.Expr, barometric_attenuation_length: float) -> pl.Expr:
+def atmospheric_pressure_factor(pa: pl.Expr, barometric_attenuation_length: Attribute) -> pl.Expr:
     r"""Calculate atmospheric pressure correction factor to neutron counts [unitless]
 
     .. math::
@@ -120,12 +120,12 @@ def correct_counts(cts_mod: pl.Expr, factor_inten: pl.Expr, factor_pa: pl.Expr, 
 @flexible
 def volumetric_water_content(
     cts_mod_corr: pl.Expr,
-    ref_soc: float,
-    ref_bulkdensity: float,
-    ref_latticewater: float,
-    n0_mod: float,
-    n_min: float,
-    n_max: float,
+    ref_soc: Attribute,
+    ref_bulkdensity: Attribute,
+    ref_latticewater: Attribute,
+    n0_mod: Attribute,
+    n_min: Attribute,
+    n_max: Attribute,
 ) -> pl.Expr:
     r"""Calculate volumetric water content (VWC) from corrected neutron counts and site annotations [%]
 
@@ -231,7 +231,7 @@ def snow_estimated_counts(cts_smo: pl.Expr, snow: pl.Expr, time: pl.Expr) -> pl.
 
 
 @flexible
-def snow_water_equivalence(cts_smo: pl.Expr, cts_est: pl.Expr, n0_mod: float) -> pl.Expr:
+def snow_water_equivalence(cts_smo: pl.Expr, cts_est: pl.Expr, n0_mod: Attribute) -> pl.Expr:
     r"""Calculate snow water equivalence (SWE) for an above ground COSMOS sensor [mm water equivalent]
 
     .. math::
@@ -317,7 +317,7 @@ def snow_water_equivalence_snowfox(cts_smo: pl.Expr, cts_est: pl.Expr) -> pl.Exp
 
 
 @flexible
-def sigma_snow_water_equivalence(cts_smo: pl.Expr, cts_est: pl.Expr, n0_mod: float) -> pl.Expr:
+def sigma_snow_water_equivalence(cts_smo: pl.Expr, cts_est: pl.Expr, n0_mod: Attribute) -> pl.Expr:
     r"""Calculate **uncertainty** in a snow water equivalence (SWE) calculation for the
     above ground COSMOS sensor [mm water equivalent]
 
@@ -416,7 +416,7 @@ def sigma_snow_water_equivalence_snowfox(cts_smo: pl.Expr, cts_est: pl.Expr) -> 
 
 @flexible
 def soil_moisture_index(
-    cosmos_vwc: pl.Expr, wilting_point: pl.Expr, field_capacity: pl.Expr, saturation: pl.Expr
+    cosmos_vwc: pl.Expr, wilting_point: Attribute, field_capacity: Attribute, saturation: Attribute
 ) -> pl.Expr:
     r"""Calculate soil moisture index (SMI) [unitless, 0-2]
 
@@ -447,9 +447,9 @@ def soil_moisture_index(
 
     Args:
         cosmos_vwc: Volumetric Water Content (soil moisture) [%]
-        wilting_point: The volumetric water content at the wilting point of the soil [%]
-        field_capacity: The volumetric water content at field capacity [%]
-        saturation: The volumetric water content when the soil is fully saturated [%]
+        wilting_point: Site attribute - volumetric water content at the wilting point of the soil [%]
+        field_capacity: Site attribute - volumetric water content at field capacity [%]
+        saturation: Site attribute - volumetric water content when the soil is fully saturated [%]
 
     Returns:
         Expression or Series calculating soil moisture index [unitless, 0-2]
@@ -468,7 +468,9 @@ def soil_moisture_index(
 
 
 @flexible
-def effective_depth(cosmos_vwc: pl.Expr, ref_soc: float, ref_bulkdensity: float, ref_latticewater: float) -> pl.Expr:
+def effective_depth(
+    cosmos_vwc: pl.Expr, ref_soc: Attribute, ref_bulkdensity: Attribute, ref_latticewater: Attribute
+) -> pl.Expr:
     r"""Original effective depth calculation from SIMPLE VWC method [cm]
 
     .. math::
@@ -502,10 +504,10 @@ def effective_depth(cosmos_vwc: pl.Expr, ref_soc: float, ref_bulkdensity: float,
 def d86(
     cosmos_vwc: pl.Expr,
     pa: pl.Expr,
-    ref_soc: float,
-    ref_bulkdensity: float,
-    ref_latticewater: float,
-    distance: float,
+    ref_soc: Attribute,
+    ref_bulkdensity: Attribute,
+    ref_latticewater: Attribute,
+    distance: Attribute,
 ) -> pl.Expr:
     r"""Calculate D86 value [cm]
 
@@ -539,7 +541,7 @@ def d86(
         ref_soc: Site attribute of reference soil organic carbon [g g-1]
         ref_bulkdensity: Site attribute of reference soil bulk density [g cm-3]
         ref_latticewater: Site attribute of reference lattice water content [g g-1]
-        distance: Distance away from the CRNS the calculation is valid for [m]
+        distance: Site attribute - distance away from the CRNS the calculation is valid for [m]
 
     Returns:
         Expression or Series calculating d86 [cm]

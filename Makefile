@@ -1,4 +1,4 @@
-.PHONY: help install-hooks type-check type-check-watch ruff qa testall test pdb coverage docs-serve docs-build build bump-patch bump-minor bump-major release clean clean-build clean-pyc clean-test
+.PHONY: help install-hooks stubs type-check type-check-watch ruff qa testall test pdb coverage docs-serve docs-build build bump-patch bump-minor bump-major release clean clean-build clean-pyc clean-test
 
 
 help:  ## Show available commands
@@ -6,6 +6,9 @@ help:  ## Show available commands
 
 install-hooks:  ## Configure git to use .githooks/
 	git config core.hooksPath .githooks
+
+stubs:  ## Regenerate the calculation modules' .pyi stubs from their signatures
+	uv run scripts/gen_stubs.py
 
 type-check:  ## Type check with pyright
 	uv run pyright
@@ -18,6 +21,7 @@ ruff:  ## Run ruff checks
 	uv run ruff check .
 
 qa:  ## Format, lint, type check, and test
+	uv run scripts/gen_stubs.py
 	uv run ruff format .
 	uv run ruff check . --fix
 	uv run ruff check --select I --fix .

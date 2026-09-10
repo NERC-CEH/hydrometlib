@@ -9,181 +9,105 @@ Quick start
     Turn measured columns into derived quantities, with Polars, Pandas or NumPy.
 
 Every calculation in ``hydrometlib`` is a plain function: you give it the measured quantities it
-needs, and it gives you the derived quantity back.
+needs, and it gives you the derived quantity back, in the same form you passed in.
 
-What you get back depends on what you put in:
-
-- pass **Polars Series**, **Pandas Series** or **NumPy arrays** and the calculation runs
-  immediately, returning the same type with the results;
-- pass a **Polars expression** or a **column name** and you get a Polars *expression* back: a
-  recipe you hand to ``select`` or ``with_columns`` for Polars to run.
-
-Parameters that are single values rather than columns (a site altitude, a latitude, a calibration
-coefficient) are passed as ordinary numbers.
-
-Polars
-======
-
-Inside ``with_columns`` or ``select``, refer to columns by name (a plain string) or with
-``pl.col``:
-
-.. code-block:: python
-
-    import polars as pl
-    from hydrometlib import meteorology
-
-    df = pl.DataFrame(
-        {
-            "swin": [22.9, 19.3, 14.0, 25.1],
-            "swout": [4.9, 4.2, 3.0, 5.5],
-            "lwin": [24.1, 26.0, 26.2, 23.1],
-            "lwout": [31.2, 31.9, 30.9, 30.8],
-        }
-    )
-
-    df = df.with_columns(
-        rn=meteorology.net_radiation("swin", "swout", "lwin", "lwout")
-    )
-
-.. code-block:: text
-
-    shape: (4, 5)
-    ┌──────┬───────┬──────┬───────┬──────┐
-    │ swin ┆ swout ┆ lwin ┆ lwout ┆ rn   │
-    │ ---  ┆ ---   ┆ ---  ┆ ---   ┆ ---  │
-    │ f64  ┆ f64   ┆ f64  ┆ f64   ┆ f64  │
-    ╞══════╪═══════╪══════╪═══════╪══════╡
-    │ 22.9 ┆ 4.9   ┆ 24.1 ┆ 31.2  ┆ 10.9 │
-    │ 19.3 ┆ 4.2   ┆ 26.0 ┆ 31.9  ┆ 9.2  │
-    │ 14.0 ┆ 3.0   ┆ 26.2 ┆ 30.9  ┆ 6.3  │
-    │ 25.1 ┆ 5.5   ┆ 23.1 ┆ 30.8  ┆ 11.9 │
-    └──────┴───────┴──────┴───────┴──────┘
-
-You can also call a function with :class:`polars.Series` directly and get a Series straight back,
-without a DataFrame:
-
-.. code-block:: python
-
-    swin = pl.Series("swin", [22.9, 19.3])
-    swout = pl.Series("swout", [4.9, 4.2])
-    lwin = pl.Series("lwin", [24.1, 26.0])
-    lwout = pl.Series("lwout", [31.2, 31.9])
-
-    meteorology.net_radiation(swin, swout, lwin, lwout)
-    # shape: (2,)
-    # Series: 'net_radiation' [f64]
-    # [
-    #     10.9
-    #     9.2
-    # ]
-
-Pandas
-======
-
-Pass :class:`pandas.Series` (for example, columns of a DataFrame) and a Series comes back, ready
-to assign as a new column:
-
-.. code-block:: python
-
-    import pandas as pd
-    from hydrometlib import meteorology
-
-    df = pd.DataFrame(
-        {
-            "swin": [22.9, 19.3, 14.0, 25.1],
-            "swout": [4.9, 4.2, 3.0, 5.5],
-            "lwin": [24.1, 26.0, 26.2, 23.1],
-            "lwout": [31.2, 31.9, 30.9, 30.8],
-        }
-    )
-
-    df["rn"] = meteorology.net_radiation(df["swin"], df["swout"], df["lwin"], df["lwout"])
-
-.. code-block:: text
-
-       swin  swout  lwin  lwout    rn
-    0  22.9    4.9  24.1   31.2  10.9
-    1  19.3    4.2  26.0   31.9   9.2
-    2  14.0    3.0  26.2   30.9   6.3
-    3  25.1    5.5  23.1   30.8  11.9
-
-Pandas support needs the ``pandas`` extra (see :ref:`installation`).
-
-NumPy
-=====
-
-Pass :class:`numpy.ndarray` and an array comes back:
-
-.. code-block:: python
-
-    import numpy as np
-    from hydrometlib import meteorology
-
-    swin = np.array([22.9, 19.3])
-    swout = np.array([4.9, 4.2])
-    lwin = np.array([24.1, 26.0])
-    lwout = np.array([31.2, 31.9])
-
-    meteorology.net_radiation(swin, swout, lwin, lwout)
-    # array([10.9,  9.2])
-
-NumPy support needs the ``numpy`` extra (see :ref:`installation`).
-
-Chaining calculations
-=====================
-
-A derived column can feed the next calculation. For example, estimate evapotranspiration from an
-eddy-covariance energy balance: first latent heat flux from net radiation, soil heat flux and
-sensible heat flux, then evapotranspiration from that.
+Here is net radiation from its four measured components, in each of the three libraries:
 
 .. tab-set::
+    :class: outline padded-tabs
 
     .. tab-item:: :iconify:`simple-icons:polars` Polars
         :sync: polars
 
-        .. code-block:: python
+        Refer to columns by name (a plain string) or with ``pl.col``. You get a Polars *expression*
+        back - which you can give to ``with_columns`` or ``select`` for Polars to run:
 
-            import polars as pl
-            from hydrometlib import flux
+        .. literalinclude:: ../examples/quick_start.py
+           :language: python
+           :start-after: [start:polars_expressions]
+           :end-before: [end:polars_expressions]
+           :dedent:
 
-            df = pl.DataFrame(
-                {
-                    "rn": [80.0, 120.0],
-                    "shf": [5.0, 8.0],
-                    "h": [30.0, 40.0],
-                    "ta": [15.0, 18.0],
-                }
-            )
+        Output:
 
-            df = df.with_columns(
-                le=flux.latent_heat_flux("rn", "shf", "h"),
-            ).with_columns(
-                et=flux.evapotranspiration_from_latent_heat_flux("le", "ta"),
-            )
+        .. jupyter-execute::
+           :hide-code:
+
+           from examples import quick_start
+
+           quick_start.polars_expressions()
+
+        You can also pass :class:`polars.Series` directly, and get a Series back, ready to assign:
+
+        .. literalinclude:: ../examples/quick_start.py
+           :language: python
+           :start-after: [start:polars_series]
+           :end-before: [end:polars_series]
+           :dedent:
+
+        Output:
+
+        .. jupyter-execute::
+           :hide-code:
+
+           from examples import quick_start
+
+           quick_start.polars_series()
 
     .. tab-item:: :iconify:`devicon:pandas` Pandas
         :sync: pandas
 
-        .. code-block:: python
+        Pass :class:`pandas.Series` - the columns of a DataFrame - and a Series comes back, ready to
+        assign:
 
-            import pandas as pd
-            from hydrometlib import flux
+        .. literalinclude:: ../examples/quick_start.py
+           :language: python
+           :start-after: [start:pandas_series]
+           :end-before: [end:pandas_series]
+           :dedent:
 
-            df = pd.DataFrame(
-                {
-                    "rn": [80.0, 120.0],
-                    "shf": [5.0, 8.0],
-                    "h": [30.0, 40.0],
-                    "ta": [15.0, 18.0],
-                }
-            )
+        Output:
 
-            df["le"] = flux.latent_heat_flux(df["rn"], df["shf"], df["h"])
-            df["et"] = flux.evapotranspiration_from_latent_heat_flux(df["le"], df["ta"])
+        .. jupyter-execute::
+           :hide-code:
+
+           from examples import quick_start
+
+           quick_start.pandas_series()
+
+        Pandas support needs the ``pandas`` extra (see :ref:`installation`).
+
+    .. tab-item:: :iconify:`devicon:numpy` NumPy
+        :sync: numpy
+
+        Pass :class:`numpy.ndarray` and an array comes back:
+
+        .. literalinclude:: ../examples/quick_start.py
+           :language: python
+           :start-after: [start:numpy_arrays]
+           :end-before: [end:numpy_arrays]
+           :dedent:
+
+        Output:
+
+        .. jupyter-execute::
+           :hide-code:
+
+           from examples import quick_start
+
+           quick_start.numpy_arrays()
+
+        NumPy support needs the ``numpy`` extra (see :ref:`installation`).
+
+Every calculation in the library works this way. Which one to use, and what each argument means, is
+in :doc:`All calculations <../api/index>`.
 
 Where to look next
 ==================
 
-- :ref:`flexible-inputs`: the rules for what you can pass in and what comes back.
-- **Function reference** (in the sidebar): every function, grouped by module, with its inputs,
-  units and source.
+- :ref:`flexible-inputs`: everything you can pass in and what comes back - including Polars Series,
+  site attributes such as a sensor height or a wilting point, and evaluating a calculation for a
+  single set of values.
+- :ref:`chaining`: feeding one derived quantity into the next.
+- :doc:`All calculations <../api/index>`: the full list of hydrometeorological calculations in the
+  library, grouped by module, each with its inputs, units and source.

@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+import polars as pl
 import pytest
 from conftest import MODES, assert_allclose, run_case
 
@@ -268,3 +269,15 @@ def test_snow_estimated_counts_all_snow_gives_no_estimate(mode: str) -> None:
         mode=mode,
     )
     assert_allclose(got, [None] * len(cts), atol=0.1)
+
+
+def test_site_attributes_can_come_from_a_column() -> None:
+    """Test a multi-site frame: n0_mod joined on as a column matches calling each site with its number."""
+    counts = [1600.0, 1750.0]
+    n0 = [2000.0, 2200.0]
+    joined = c.volumetric_water_content(pl.Series("cts", counts), 0.01, 1.4, 0.02, pl.Series("n0", n0), 500.0, 4000.0)
+    per_site = [
+        c.volumetric_water_content(pl.Series("cts", [count]), 0.01, 1.4, 0.02, n0_mod, 500.0, 4000.0).to_list()[0]
+        for count, n0_mod in zip(counts, n0, strict=True)
+    ]
+    assert_allclose(joined.to_list(), per_site)

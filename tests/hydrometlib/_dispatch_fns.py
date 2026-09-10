@@ -7,7 +7,7 @@ consulted when another module imports it, never when type-checking its own sourc
 
 import polars as pl
 
-from hydrometlib._dispatch import flexible
+from hydrometlib._dispatch import Attribute, flexible
 
 
 @flexible
@@ -26,3 +26,15 @@ def scale(col: pl.Expr, factor: float) -> pl.Expr:
 def add_optional(a: pl.Expr, b: pl.Expr | None = None) -> pl.Expr:
     """Add ``b`` to ``a``, or return ``a`` unchanged when ``b`` is omitted."""
     return a if b is None else a + b
+
+
+@flexible
+def offset(col: pl.Expr, by: Attribute) -> pl.Expr:
+    """Add a site attribute to a column; ``by`` may be a column or the single number it usually is."""
+    return col + by
+
+
+@flexible
+def offset_optional(col: pl.Expr, by: Attribute | None = None) -> pl.Expr:
+    """Add ``by`` to ``col``, or return ``col`` unchanged when the attribute is omitted."""
+    return col if by is None else col + by

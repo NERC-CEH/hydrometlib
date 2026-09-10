@@ -1,6 +1,6 @@
 import polars as pl
 
-from hydrometlib._dispatch import flexible
+from hydrometlib._dispatch import Attribute, flexible
 
 
 @flexible
@@ -50,7 +50,7 @@ def mean_soil_heat_flux(g1: pl.Expr, g2: pl.Expr) -> pl.Expr:
 
 
 @flexible
-def mean_sea_level_pressure(pa: pl.Expr, ta: pl.Expr, altitude: float) -> pl.Expr:
+def mean_sea_level_pressure(pa: pl.Expr, ta: pl.Expr, altitude: Attribute) -> pl.Expr:
     r"""Calculate mean sea level pressure (mslp) [hPa]
 
     Adjusts measured atmospheric pressure to its sea-level equivalent. Measured pressure depends on the
@@ -71,7 +71,7 @@ def mean_sea_level_pressure(pa: pl.Expr, ta: pl.Expr, altitude: float) -> pl.Exp
     Args:
         pa: Atmospheric pressure [hPa]
         ta: Air temperature [Celsius]
-        altitude: Site altitude [m]
+        altitude: Site attribute - site altitude [m]
 
     Returns:
         Expression or Series computing mslp [hPa]
@@ -148,7 +148,7 @@ def absolute_humidity(ta: pl.Expr, rh: pl.Expr) -> pl.Expr:
 
 
 @flexible
-def solar_zenith(time: pl.Expr, latitude: float) -> pl.Expr:
+def solar_zenith(time: pl.Expr, latitude: Attribute) -> pl.Expr:
     r"""Calculate the solar zenith angle (theta_s) [radians]
 
     The angle of the sun from the vertical: 0 when the sun is directly overhead, ``pi / 2`` at the
@@ -179,7 +179,7 @@ def solar_zenith(time: pl.Expr, latitude: float) -> pl.Expr:
             straight from the clock time, so this must be a local time in which solar noon is
             approximately 12:00 - longitude and the equation of time are not accounted for.
             For UK sites, UTC is close enough; do not pass a summer-time (BST) clock.
-        latitude: Site latitude [degrees, positive north]
+        latitude: Site attribute - site latitude [degrees, positive north]
 
     Returns:
         Expression or Series for solar zenith angle, theta_s [radians]
@@ -195,7 +195,7 @@ def solar_zenith(time: pl.Expr, latitude: float) -> pl.Expr:
     delta = -pl.lit(axis_tilt).radians() * (((360 / 365) * (ordinal_days + 10.0)).radians()).cos()
 
     # Convert latitude to radians
-    phi = pl.lit(latitude).radians()
+    phi = latitude.radians()
 
     # cos(theta_s)
     cos_theta_s = phi.sin() * delta.sin() + phi.cos() * delta.cos() * h.cos()
@@ -242,7 +242,7 @@ def albedo(swin: pl.Expr, swout: pl.Expr, solar_zenith_angle: pl.Expr) -> pl.Exp
 
 
 @flexible
-def is_snow_day(albedo_expr: pl.Expr, albedo_min_threshold: float, albedo_max_threshold: float) -> pl.Expr:
+def is_snow_day(albedo_expr: pl.Expr, albedo_min_threshold: Attribute, albedo_max_threshold: Attribute) -> pl.Expr:
     r"""Calculate if a given day is a snow day. True is snow, False if not.
 
     .. math::
@@ -274,8 +274,10 @@ def is_snow_day(albedo_expr: pl.Expr, albedo_min_threshold: float, albedo_max_th
 
     Args:
         albedo_expr: Albedo - measure of reflection with values between 0 and 1 [unitless fraction]
-        albedo_min_threshold: Albedo threshold below which there is no snow [unitless fraction, 0-1]
-        albedo_max_threshold: Albedo threshold above which there is snow [unitless fraction, 0-1]
+        albedo_min_threshold: Site attribute - albedo threshold below which there is no snow
+            [unitless fraction, 0-1]
+        albedo_max_threshold: Site attribute - albedo threshold above which there is snow
+            [unitless fraction, 0-1]
 
     Returns:
         Expression or Series with boolean values.

@@ -52,10 +52,45 @@ new unit tests to improve the robustness of the code, or going deeper to add new
 1. Clone the repository
 2. Create your feature branch (``git checkout -b feature/amazing-feature``)
 3. Make your changes, with tests and documentation
-4. Run the test suite and docs build (see `Testing`_).
+4. Run the test suite and docs build (see `Testing`_ and :doc:`documentation`).
 5. Commit your changes (``git commit -m 'Add some amazing feature'``)
 6. Push to the branch (``git push origin feature/amazing-feature``)
 7. Open a Pull Request
+
+Adding a calculation
+--------------------
+
+Write the calculation as a pure Polars expression, annotate its column parameters ``pl.Expr``, and wrap it in
+``@flexible``:
+
+.. code-block:: python
+
+    @flexible
+    def net_radiation(swin: pl.Expr, swout: pl.Expr, lwin: pl.Expr, lwout: pl.Expr) -> pl.Expr:
+        r"""Calculate net radiation (rn) [W m-2]
+        ...
+        """
+        return swin - swout + lwin - lwout
+
+``flexible`` lets callers pass a ``pl.Expr``, a column-name ``str``, a ``pl.Series``, a ``pd.Series`` or a
+``np.ndarray`` and get the same kind back. No decorator can describe that transform to a type checker, so the
+accepted types are declared as ``@overload``s in the module's ``.pyi`` stub. **You do not write those by hand** -
+regenerate them from your signatures:
+
+.. code-block:: bash
+
+    make stubs
+
+What the stub generator needs from you:
+
+- Annotate a **data column** - a measured quantity, one value per row - ``pl.Expr``
+- Annotate a **site attribute** ``Attribute``, imported from ``hydrometlib._dispatch``
+- Reserve ``float`` for a quantity that can never be a column.
+
+``flexible`` reads these annotations at runtime to work out how to carry out the calculation, so they have to be exact.
+
+Your calculation also needs an entry in the function reference (see :doc:`documentation`) and tests covering each
+input mode, ideally against a worked example from the paper or standard it cites.
 
 Pull requests
 -------------
@@ -130,7 +165,7 @@ We use `pytest` for running unit tests and coverage.
 
 .. code-block:: bash
 
-   pytest tests/test_base.py
+   pytest tests/hydrometlib/test_meteorology.py
 
 **CI/CD**
 

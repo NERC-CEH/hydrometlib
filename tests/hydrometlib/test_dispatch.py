@@ -5,8 +5,11 @@ import numpy as np
 import pandas as pd
 import polars as pl
 import pytest
-from _dispatch_fns import add, add_optional, scale
+from _dispatch_fns import add, add_optional, offset, offset_optional, scale
 from polars.testing import assert_series_equal
+
+from hydrometlib import evapotranspiration, meteorology
+from hydrometlib._dispatch import _column_annotation
 
 
 class TestExpressionMode:
@@ -175,7 +178,7 @@ class TestUnsupportedArguments:
 
 
 class TestOptionalColumn:
-    """A parameter annotated ``pl.Expr | None`` may be omitted, and then plays no part in dispatch."""
+    """A parameter annotated ``Column | None`` may be omitted, and then plays no part in dispatch."""
 
     def test_omitted_in_expr_mode(self) -> None:
         """Test that omitting the optional column returns an expression built from the other columns."""
@@ -217,3 +220,102 @@ class TestMetadata:
         assert add.__name__ == "add"
         assert add.__doc__ == "Add two columns."
         assert hasattr(add, "__wrapped__")
+
+
+class TestSiteAttribute:
+    """A parameter marked ``Attribute`` takes a column, or the single number it usually is."""
+
+    def test_number_in_expr_mode(self) -> None:
+        """Test that an attribute number is broadcast alongside an expression."""
+        out = pl.DataFrame({"x": [1.0, 2.0]}).select(offset(pl.col("x"), 10.0).alias("out"))
+        assert out["out"].to_list() == [11.0, 12.0]
+
+    def test_number_in_column_name_mode(self) -> None:
+        """Test that an attribute number is broadcast alongside a column name."""
+        out = pl.DataFrame({"x": [1.0, 2.0]}).select(offset("x", 10.0).alias("out"))
+        assert out["out"].to_list() == [11.0, 12.0]
+
+    def test_number_in_polars_series_mode(self) -> None:
+        """Test that an attribute number does not change a Polars Series result."""
+        out = offset(pl.Series("x", [1.0, 2.0]), 10.0)
+        assert isinstance(out, pl.Series)
+        assert out.to_list() == [11.0, 12.0]
+
+    def test_number_in_pandas_series_mode(self) -> None:
+        """Test that an attribute number does not change a pandas Series result."""
+        out = offset(pd.Series([1.0, 2.0]), 10.0)
+        assert isinstance(out, pd.Series)
+        assert out.to_list() == [11.0, 12.0]
+
+    def test_number_in_numpy_mode(self) -> None:
+        """Test that an attribute number does not change a NumPy array result."""
+        out = offset(np.array([1.0, 2.0]), 10.0)
+        assert isinstance(out, np.ndarray)
+        assert out.tolist() == [11.0, 12.0]
+
+    def test_attribute_may_still_be_a_column(self) -> None:
+        """Test that marking a parameter an attribute does not stop it being a column."""
+        out = offset(pl.Series("x", [1.0, 2.0]), pl.Series("by", [10.0, 20.0]))
+        assert out.to_list() == [11.0, 22.0]
+
+    def test_number_is_exempt_from_the_equal_length_check(self) -> None:
+        """Test that an attribute number is broadcast rather than length-checked against the columns."""
+        out = offset(pl.Series("x", [1.0, 2.0, 3.0]), 10.0)
+        assert out.to_list() == [11.0, 12.0, 13.0]
+
+    def test_number_does_not_decide_the_mode(self) -> None:
+        """Test that an attribute number never triggers the same-kind rule, so it pairs with any kind."""
+        assert isinstance(offset(pd.Series([1.0]), 2.0), pd.Series)
+        assert isinstance(offset(pl.Series("x", [1.0]), 2.0), pl.Series)
+
+    def test_optional_attribute_omitted_number_or_column(self) -> None:
+        """Test that an optional attribute can be omitted, given as a number, or given as a column."""
+        x = pl.Series("x", [1.0, 2.0])
+        assert offset_optional(x).to_list() == [1.0, 2.0]
+        assert offset_optional(x, 10.0).to_list() == [11.0, 12.0]
+        assert offset_optional(x, pl.Series("by", [10.0, 20.0])).to_list() == [11.0, 22.0]
+
+    def test_a_data_column_still_refuses_a_number(self) -> None:
+        """Test that only attributes take a number while real columns are present."""
+        with pytest.raises(TypeError, match="is a data column"):
+            offset(2.0, pl.Series("by", [1.0]))  # pyright: ignore[reportCallIssue, reportArgumentType]  # noqa deliberately wrong type
+
+
+class TestAllConstantCall:
+    """Giving every column argument as a number evaluates the calculation for that one set of values."""
+
+    def test_returns_a_number_not_an_expression(self) -> None:
+        """Test that an all-constant call is evaluated rather than handed back as an expression."""
+        assert add(1.0, 2.0) == 3.0
+
+    def test_mixes_data_columns_and_attributes(self) -> None:
+        """Test that an all-constant call covers attributes as well as data columns."""
+        assert offset(1.0, 10.0) == 11.0
+
+    def test_constant_parameters_are_unaffected(self) -> None:
+        """Test that a parameter which was never a column still takes its number."""
+        assert scale(3.0, 10.0) == 30.0
+
+    def test_null_by_design_comes_back_as_none(self) -> None:
+        """Test that a calculation which yields null for these values returns None, not a number."""
+        assert meteorology.albedo(0.0, 5.0, 1.0) is None
+
+    def test_a_boolean_calculation_returns_a_bool(self) -> None:
+        """Test that a calculation returning a boolean gives one back rather than a float."""
+        assert meteorology.is_snow_day(0.6, 0.35, 0.5) is True
+
+    def test_reference_value(self) -> None:
+        """Test an all-constant call against a known result, so evaluation is not merely type-correct."""
+        # FAO-56 Example 14: 10 m s-1 measured at 10 m corrects to 7.48 m s-1 at 2 m.
+        got = evapotranspiration.wind_speed_height_correction(10.0, 10.0)
+        assert got is not None
+        assert abs(got - 7.48) < 0.01
+
+    def test_optional_column_may_be_omitted(self) -> None:
+        """Test that omitting an optional attribute still counts as an all-constant call."""
+        assert offset_optional(1.0) == 1.0
+
+
+def test_a_non_column_union_is_not_an_optional_column() -> None:
+    """Test that only ``pl.Expr | None`` marks an optional column, so other unions stay constants."""
+    assert _column_annotation(float | None) == (False, False, False)

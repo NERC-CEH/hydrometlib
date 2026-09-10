@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+import polars as pl
 import pytest
 from conftest import MODES, assert_allclose, run_case
 
@@ -186,3 +187,14 @@ def test_is_snow_day(mode: str) -> None:
         None, None, False, False, False, False, True, True, None, True, False, True, True, True, True
     ]  # fmt: skip
     assert_allclose(got, expected)
+
+
+def test_altitude_can_come_from_a_column() -> None:
+    """Test a multi-site frame: altitude as a column matches calling each site with its number."""
+    pa, ta, altitude = [1000.0, 990.0], [15.0, 12.0], [100.0, 250.0]
+    joined = m.mean_sea_level_pressure(pl.Series("pa", pa), pl.Series("ta", ta), pl.Series("alt", altitude))
+    per_site = [
+        m.mean_sea_level_pressure(pl.Series("pa", [p]), pl.Series("ta", [t]), a).to_list()[0]
+        for p, t, a in zip(pa, ta, altitude, strict=True)
+    ]
+    assert_allclose(joined.to_list(), per_site)
