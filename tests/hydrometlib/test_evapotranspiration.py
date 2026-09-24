@@ -40,6 +40,28 @@ def test_latent_heat_of_vaporization(mode: str) -> None:
 
 
 @pytest.mark.parametrize("mode", MODES)
+def test_latent_heat_to_evapotranspiration(mode: str) -> None:
+    """Test conversion of latent heat flux to evapotranspiration."""
+    got = run_case(
+        et.latent_heat_to_evapotranspiration,
+        {"le": [100.0, 200.0], "ta": [0.0, 20.0]},
+        mode=mode,
+    )
+    assert_allclose(got, [0.14394242, 0.29342484], atol=1e-7)
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_latent_heat_to_evapotranspiration_null_propagates(mode: str) -> None:
+    """Test that null inputs propagate through the latent heat conversion."""
+    got = run_case(
+        et.latent_heat_to_evapotranspiration,
+        {"le": [None, 100.0], "ta": [20.0, None]},
+        mode=mode,
+    )
+    assert_allclose(got, [None, None])
+
+
+@pytest.mark.parametrize("mode", MODES)
 def test_psychrometric_constant(mode: str) -> None:
     """Test the psychrometric constant calculation."""
     # Taken from FAO56 EXAMPLE 2 https://www.fao.org/4/x0490e/x0490e07.htm#psychrometric%20constant%20(g)

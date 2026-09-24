@@ -216,3 +216,41 @@ def potential_evapotranspiration_30min(
     resistance_term = delta + gamma * (1 + (reference_crop_type_denominator * ws_2m))
 
     return (radiation_term + aerodynamic_term) / resistance_term
+
+
+@flexible
+def latent_heat_to_evapotranspiration(le: pl.Expr, ta: pl.Expr) -> pl.Expr:
+    r"""Convert latent heat flux to evapotranspiration [mm h-1].
+
+    The latent heat of vaporization is approximated as
+
+
+    .. math::
+
+        \lambda = 2501 - 2.361 \, T_a
+
+    where :math:`\lambda` is in kJ kg\ :sup:`-1` and :math:`T_a` is in degC.
+    This relationship was reported by Harrison (1963) and reproduced in
+    FAO-56 (Allen et al., 1998).
+
+    The latent heat flux is then converted using:
+
+    .. math::
+
+        ET = \frac{3.6 \, LE}{\lambda}
+
+    The factor 3.6 converts a flux in W m\ :sup:`-2` and latent heat in
+    kJ kg\ :sup:`-1` to millimetres per hour.
+
+    For a related, independently documented approximation, see
+    :func:`latent_heat_of_vaporization`.
+
+    Args:
+        le: Latent heat flux [W m-2]
+        ta: Air temperature [degC]
+
+    Returns:
+        Expression or Series computing evapotranspiration [mm h-1]
+    """
+    lv = 2501 - (2.361 * ta)
+    return 3.6 * le / lv
