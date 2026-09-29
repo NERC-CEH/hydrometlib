@@ -222,28 +222,31 @@ def potential_evapotranspiration_30min(
 def latent_heat_to_evapotranspiration(le: pl.Expr, ta: pl.Expr) -> pl.Expr:
     r"""Convert latent heat flux to evapotranspiration [mm h-1].
 
-    The latent heat of vaporization is approximated as
-
-
-    .. math::
-
-        \lambda = 2501 - 2.361 \, T_a
-
-    where :math:`\lambda` is in kJ kg\ :sup:`-1` and :math:`T_a` is in degC.
-    This relationship was reported by Harrison (1963) and reproduced in
-    FAO-56 (Allen et al., 1998).
-
-    The latent heat flux is then converted using:
+    The latent heat of vaporization (lv) is approximated as
 
     .. math::
 
-        ET = \frac{3.6 \, LE}{\lambda}
+        \lv = 2501 - 2.361 \, T_a
 
-    The factor 3.6 converts a flux in W m\ :sup:`-2` and latent heat in
-    kJ kg\ :sup:`-1` to millimetres per hour.
+    where :math:`\lv` is in kJ kg\ :sup:`-1` and :math:`T_a` is in degC.
+    References:
+        - Harrison, L.P. 1963. "Fundamental concepts and definitions relating to humidity."
+          In: Wexler, A. & Wildhack, W.A. (eds.) Humidity and Moisture. Vol. 3.
+          Reinhold Publishing Company, New York
+        - FAO-56 Annex 3 https://www.fao.org/4/x0490e/x0490e0k.htm
 
-    For a related, independently documented approximation, see
-    :func:`latent_heat_of_vaporization`.
+    The latent heat flux is converted to evapotranspiration using
+
+    .. math::
+
+        ET = \frac{3.6 \, LE}{\lv}
+
+    where :math:`LE` is the latent heat flux [W m-2] and
+    :math:`\lv` is the latent heat of vaporization [kJ kg-1].
+
+    The factor 3.6 arises from converting joules to kilojoules and
+    seconds to hours. Since 1 kg m-2 of water is equivalent to a water
+    depth of 1 mm, the result is expressed in mm h-1.
 
     Args:
         le: Latent heat flux [W m-2]
@@ -252,5 +255,6 @@ def latent_heat_to_evapotranspiration(le: pl.Expr, ta: pl.Expr) -> pl.Expr:
     Returns:
         Expression or Series computing evapotranspiration [mm h-1]
     """
-    lv = 2501 - (2.361 * ta)
+    # Convert lv from MJ/kg to kJ/kg
+    lv = latent_heat_of_vaporization(ta) * 1000
     return 3.6 * le / lv
