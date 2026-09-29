@@ -16,7 +16,6 @@ evapotranspiration
 
     actual_vapour_pressure
     latent_heat_of_vaporization
-    latent_heat_to_evapotranspiration
     potential_evapotranspiration_30min
     psychrometric_constant
     saturation_vapour_pressure

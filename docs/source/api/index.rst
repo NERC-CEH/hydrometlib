@@ -43,7 +43,6 @@ The FAO-56 Penman-Monteith calculation and the intermediate variables it is buil
 
     actual_vapour_pressure
     latent_heat_of_vaporization
-    latent_heat_to_evapotranspiration
     potential_evapotranspiration_30min
     psychrometric_constant
     saturation_vapour_pressure
