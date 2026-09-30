@@ -22,7 +22,6 @@ _PAGES = {
     "meteorology": "meteorology.rst",
     "evapotranspiration": "evapotranspiration.rst",
     "cosmos": "cosmos_soil_moisture.rst",
-    "flux": "flux.rst",
 }
 
 _CURRENTMODULE = re.compile(r"^\.\.\s+currentmodule::\s*(\S+)\s*$")
