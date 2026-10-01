@@ -3,13 +3,13 @@
 import pandas as pd
 import polars as pl
 
-from hydrometlib import flux
+from hydrometlib import evapotranspiration
 
 # The energy-balance frame the two chaining examples start from. Building it is not the point of
 # those examples, so it lives here rather than in the region the page shows.
 _ENERGY_BALANCE = {
     "rn": [80.0, 120.0],
-    "shf": [5.0, 8.0],
+    "g": [5.0, 8.0],
     "h": [30.0, 40.0],
     "ta": [15.0, 18.0],
 }
@@ -20,9 +20,9 @@ def chaining_polars() -> None:
     df = pl.DataFrame(_ENERGY_BALANCE)
     # [start:chaining_polars]
     df = df.with_columns(
-        le=flux.latent_heat_flux("rn", "shf", "h"),
+        le=evapotranspiration.latent_heat_flux("rn", "g", "h"),
     ).with_columns(
-        et=flux.evapotranspiration_from_latent_heat_flux("le", "ta"),
+        et=evapotranspiration.evapotranspiration_from_latent_heat_flux("le", "ta"),
     )
     # [end:chaining_polars]
     print(df)
@@ -33,11 +33,11 @@ def chaining_pandas() -> None:
     df = pd.DataFrame(_ENERGY_BALANCE)
     # fmt: off
     # [start:chaining_pandas]
-    df["le"] = flux.latent_heat_flux(
-        df["rn"], df["shf"], df["h"]
+    df["le"] = evapotranspiration.latent_heat_flux(
+        df["rn"], df["g"], df["h"]
     )
 
-    df["et"] = flux.evapotranspiration_from_latent_heat_flux(
+    df["et"] = evapotranspiration.evapotranspiration_from_latent_heat_flux(
         df["le"], df["ta"]
     )
     # [end:chaining_pandas]
