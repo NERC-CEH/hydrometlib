@@ -11,7 +11,7 @@ authors:
 abstract: "A trusted library of verified and referenced hydrometeorological calculations and derivations."
 repository-code: "https://github.com/NERC-CEH/hydrometlib"
 license: MIT
-version: 0.1.0
+version: 1.0.0
 contact:
   - given-names: "Richard"
     family-names: "Smith"

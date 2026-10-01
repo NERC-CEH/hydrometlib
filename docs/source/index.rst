@@ -96,7 +96,6 @@ This project is licensed under the `MIT <https://github.com/NERC-CEH/hydrometlib
     api/meteorology
     api/evapotranspiration
     api/cosmos_soil_moisture
-    api/flux
 
 
 .. toctree::
