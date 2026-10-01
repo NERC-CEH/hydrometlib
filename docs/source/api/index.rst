@@ -33,7 +33,8 @@ Radiation balance and atmospheric-state variables. Full page: :doc:`meteorology`
 evapotranspiration
 ==================
 
-The FAO-56 Penman-Monteith calculation and the intermediate variables it is built from. Full page:
+The FAO-56 Penman-Monteith calculation and the intermediate variables it is built from, and evapotranspiration from
+the latent heat flux of the surface energy balance. Full page:
 :doc:`evapotranspiration`.
 
 .. currentmodule:: hydrometlib.evapotranspiration
@@ -42,6 +43,8 @@ The FAO-56 Penman-Monteith calculation and the intermediate variables it is buil
     :nosignatures:
 
     actual_vapour_pressure
+    evapotranspiration_from_latent_heat_flux
+    latent_heat_flux
     latent_heat_of_vaporization
     potential_evapotranspiration_30min
     psychrometric_constant
@@ -73,16 +76,3 @@ Cosmic-ray neutron sensor corrections, soil moisture, and snow water equivalent.
     snow_water_equivalence_snowfox
     soil_moisture_index
     volumetric_water_content
-
-flux
-====
-
-Energy-balance fluxes and evapotranspiration from eddy-covariance data. Full page: :doc:`flux`.
-
-.. currentmodule:: hydrometlib.flux
-
-.. autosummary::
-    :nosignatures:
-
-    evapotranspiration_from_latent_heat_flux
-    latent_heat_flux

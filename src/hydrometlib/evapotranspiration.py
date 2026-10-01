@@ -216,3 +216,69 @@ def potential_evapotranspiration_30min(
     resistance_term = delta + gamma * (1 + (reference_crop_type_denominator * ws_2m))
 
     return (radiation_term + aerodynamic_term) / resistance_term
+
+
+@flexible
+def latent_heat_flux(rn: pl.Expr, g: pl.Expr, h: pl.Expr) -> pl.Expr:
+    r"""Latent heat flux (LE) as the residual of the surface energy balance [W m-2]
+
+    .. math::
+
+        LE = R_n - G - H
+
+    where :math:`R_n` is the net radiation, :math:`G` the soil heat flux and :math:`H` the sensible heat flux. This
+    rearranges the surface energy balance :math:`R_n - G - \lambda ET - H = 0`, in which :math:`\lambda ET` is the
+    latent heat flux :math:`LE`.
+
+    From FAO-56 Chapter 1: "Only vertical fluxes are considered and the net rate at which energy is being transferred
+    horizontally, by advection, is ignored. Therefore the equation is to be applied to large, extensive surfaces of
+    homogeneous vegetation only ... Other energy terms, such as heat stored or released in the plant, or the energy
+    used in metabolic activities, are not considered. These terms account for only a small fraction of the daily
+    net radiation and can be considered negligible when compared with the other four components."
+
+    References:
+        - FAO-56 Chapter 1 (eq. 1), energy balance method https://www.fao.org/4/x0490e/x0490e04.htm
+
+    Args:
+        rn: Net radiation [W m-2]
+        g: Soil heat flux [W m-2]
+        h: Sensible heat flux [W m-2]
+
+    Returns:
+        Expression or Series computing LE [W m-2]
+    """
+    return rn - g - h
+
+
+@flexible
+def evapotranspiration_from_latent_heat_flux(le: pl.Expr, ta: pl.Expr) -> pl.Expr:
+    r"""Evapotranspiration (ET) from latent heat flux [mm h-1]
+
+    The latent heat flux is the energy used to evaporate water, :math:`LE = \lambda \, ET`, so dividing it by the
+    latent heat of vaporization gives the evapotranspiration rate:
+
+    .. math::
+
+        ET = \frac{LE}{\lambda}
+
+    where :math:`LE` is the latent heat flux [W m-2] and :math:`\lambda` is the latent heat of vaporization
+    [MJ kg-1] at air temperature :math:`T_a`. :math:`LE` can be measured directly by eddy covariance, or estimated as
+    the residual of the surface energy balance with :func:`latent_heat_flux`.
+
+    Unit conversion: :math:`\lambda` is multiplied by :math:`10^{6}` to convert it from MJ kg-1 to J kg-1, giving
+    :math:`ET` as a mass flux of water [kg m-2 s-1]. Taking the density of water as 1000 kg m-3, 1 kg m-2 of water
+    is a depth of 1 mm, so this is also a depth rate [mm s-1], which is multiplied by 3600 to give mm h-1.
+
+    References:
+        - FAO-56 Chapter 1, Units and Table 1, https://www.fao.org/4/x0490e/x0490e04.htm
+        - FAO-56 Chapter 3 (eq. 20), https://www.fao.org/4/x0490e/x0490e07.htm
+
+    Args:
+        le: Latent heat flux [W m-2]
+        ta: Air temperature [degC]
+
+    Returns:
+        Expression or Series computing ET [mm h-1]
+    """
+    lv = latent_heat_of_vaporization(ta)
+    return 3600 * le / (1e6 * lv)
