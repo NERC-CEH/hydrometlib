@@ -71,8 +71,8 @@ To pass pandas Series or NumPy arrays into the calculations, install the matchin
 Importing
 =========
 
-The calculations are grouped into four modules. Import the ones you need:
+The calculations are grouped into three modules. Import the ones you need:
 
 .. code-block:: python
 
-   from hydrometlib import cosmos, evapotranspiration, flux, meteorology
+   from hydrometlib import cosmos, evapotranspiration, meteorology
