@@ -31,13 +31,13 @@ Install options
 
         .. code-block:: bash
 
-            uv add git+https://github.com/NERC-CEH/hydrometlib
+            uv add hydrometlib
 
     .. tab-item:: :iconify:`devicon:pypi` pip
 
         .. code-block:: bash
 
-            pip install git+https://github.com/NERC-CEH/hydrometlib
+            pip install hydrometlib
 
 Optional extras
 ===============
@@ -53,20 +53,20 @@ To pass pandas Series or NumPy arrays into the calculations, install the matchin
         .. code-block:: bash
 
             # pandas Series support
-            uv add "hydrometlib[pandas] @ git+https://github.com/NERC-CEH/hydrometlib"
+            uv add "hydrometlib[pandas]"
 
             # NumPy array support
-            uv add "hydrometlib[numpy] @ git+https://github.com/NERC-CEH/hydrometlib"
+            uv add "hydrometlib[numpy]"
 
     .. tab-item:: :iconify:`devicon:pypi` pip
 
         .. code-block:: bash
 
             # pandas Series support
-            pip install "hydrometlib[pandas] @ git+https://github.com/NERC-CEH/hydrometlib"
+            pip install "hydrometlib[pandas]"
 
             # NumPy array support
-            pip install "hydrometlib[numpy] @ git+https://github.com/NERC-CEH/hydrometlib"
+            pip install "hydrometlib[numpy]"
 
 Importing
 =========
