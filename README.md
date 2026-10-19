@@ -1,4 +1,5 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/hydrometlib.svg)](https://pypi.org/project/hydrometlib/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/NERC-CEH/hydrometlib/blob/main/LICENSE)
 ![Language](https://img.shields.io/github/languages/top/NERC-CEH/hydrometlib)
 [![tests badge](https://github.com/NERC-CEH/hydrometlib/actions/workflows/pipeline.yml/badge.svg)](https://github.com/NERC-CEH/hydrometlib/actions)
 [![Docs](https://img.shields.io/badge/docs-%F0%9F%93%9A%20online-blue)](https://nerc-ceh.github.io/hydrometlib)
@@ -9,11 +10,40 @@ A trusted library of verified and referenced hydrometeorological calculations an
 
 ## Overview
 
-TODO
+`hydrometlib` is a small collection of standard calculations used to turn raw hydrometeorological
+measurements into derived quantities: net radiation, potential evapotranspiration, absolute humidity, soil moisture
+from cosmic-ray neutron counts, and more. Each one is a single function you call with the data types you already have.
+
+- **Flexible inputs**: call every function with a Polars expression, a column name, a Polars Series, a pandas Series
+  or a NumPy array, and get the result back in the same form. Site attributes, such as a sensor height or latitude,
+  take a plain number or a column.
+- **Referenced and tested**: every calculation cites the paper or standard it comes from, and is checked against
+  known-good values across all supported input types.
+- **Trusted source**: developed and maintained by [UKCEH](https://www.ceh.ac.uk/) as part of the
+  [Floods and Droughts Research Infrastructure (FDRI)](https://fdri.org.uk/).
+
+See the [quick start](https://nerc-ceh.github.io/hydrometlib/getting_started/quick_start.html) for example calculations
+using Polars, pandas and NumPy, and the [calculation library](https://nerc-ceh.github.io/hydrometlib/api/index.html) for
+every function with its inputs, units and source.
+
+## Installation
+
+```bash
+pip install hydrometlib
+```
+
+or with uv:
+
+```bash
+uv add hydrometlib
+```
+
+pandas and NumPy inputs need the matching extra, e.g. `pip install "hydrometlib[pandas]"`.
+See the [installation guide](https://nerc-ceh.github.io/hydrometlib/getting_started/installation.html) for details.
 
 ## License
 
-This project is licensed under the [MIT license](LICENSE).
+This project is licensed under the [MIT license](https://github.com/NERC-CEH/hydrometlib/blob/main/LICENSE).
 
 ## Contributing
 
@@ -99,6 +129,6 @@ open _build/html/index.html
 
 ## Citation
 
-If you use this software, please cite it using the metadata in [`CITATION.cff`](./CITATION.cff).
+If you use this software, please cite it using the metadata in [`CITATION.cff`](https://github.com/NERC-CEH/hydrometlib/blob/main/CITATION.cff).
 
 Built with [Cookiecutter](https://github.com/cookiecutter/cookiecutter) and the [NERC-CEH/fdri-cookiecutter-pypackage](https://github.com/NERC-CEH/fdri-cookiecutter-pypackage) template.
